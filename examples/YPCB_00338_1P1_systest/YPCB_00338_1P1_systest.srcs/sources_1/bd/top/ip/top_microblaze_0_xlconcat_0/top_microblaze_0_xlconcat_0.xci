@@ -4,7 +4,7 @@
     "xci_name": "top_microblaze_0_xlconcat_0",
     "cell_name": "microblaze_0_xlconcat",
     "component_reference": "xilinx.com:ip:xlconcat:2.1",
-    "ip_revision": "4",
+    "ip_revision": "6",
     "gen_directory": "../../../../../../YPCB_00338_1P1_systest.gen/sources_1/bd/top/ip/top_microblaze_0_xlconcat_0",
     "parameters": {
       "component_parameters": {
@@ -138,7 +138,7 @@
         "IN125_WIDTH": [ { "value": "1", "value_permission": "bd_and_user", "resolve_type": "user", "format": "long", "usage": "all" } ],
         "IN126_WIDTH": [ { "value": "1", "value_permission": "bd_and_user", "resolve_type": "user", "format": "long", "usage": "all" } ],
         "IN127_WIDTH": [ { "value": "1", "value_permission": "bd_and_user", "resolve_type": "user", "format": "long", "usage": "all" } ],
-        "dout_width": [ { "value": "5", "value_permission": "bd", "resolve_type": "user", "format": "long", "usage": "all" } ]
+        "dout_width": [ { "value": "5", "value_src": "user", "value_permission": "bd", "resolve_type": "user", "format": "long", "usage": "all" } ]
       },
       "model_parameters": {
         "IN0_WIDTH": [ { "value": "1", "resolve_type": "generated", "format": "long", "usage": "all" } ],
@@ -274,7 +274,7 @@
       },
       "project_parameters": {
         "ARCHITECTURE": [ { "value": "kintex7" } ],
-        "BASE_BOARD_PART": [ { "value": "tiferking.cn:ypcb003381p1:part0:1.0" } ],
+        "BASE_BOARD_PART": [ { "value": "xilinx:xc7k480t_hhhl_ac:part0:1.0" } ],
         "BOARD_CONNECTIONS": [ { "value": "" } ],
         "DEVICE": [ { "value": "xc7k480t" } ],
         "PACKAGE": [ { "value": "ffg1156" } ],
@@ -283,18 +283,16 @@
         "SIMULATOR_LANGUAGE": [ { "value": "MIXED" } ],
         "SPEEDGRADE": [ { "value": "-2" } ],
         "STATIC_POWER": [ { "value": "" } ],
-        "TEMPERATURE_GRADE": [ { "value": "" } ],
-        "USE_RDI_CUSTOMIZATION": [ { "value": "TRUE" } ],
-        "USE_RDI_GENERATION": [ { "value": "TRUE" } ]
+        "TEMPERATURE_GRADE": [ { "value": "" } ]
       },
       "runtime_parameters": {
         "IPCONTEXT": [ { "value": "IP_Integrator" } ],
-        "IPREVISION": [ { "value": "4" } ],
+        "IPREVISION": [ { "value": "6" } ],
         "MANAGED": [ { "value": "TRUE" } ],
         "OUTPUTDIR": [ { "value": "../../../../../../YPCB_00338_1P1_systest.gen/sources_1/bd/top/ip/top_microblaze_0_xlconcat_0" } ],
         "SELECTEDSIMMODEL": [ { "value": "" } ],
         "SHAREDDIR": [ { "value": "../../ipshared" } ],
-        "SWVERSION": [ { "value": "2022.2" } ],
+        "SWVERSION": [ { "value": "2024.2" } ],
         "SYNTHESISFLOW": [ { "value": "GLOBAL" } ]
       }
     },

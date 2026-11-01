@@ -1,4 +1,5 @@
 //Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+//Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 //--------------------------------------------------------------------------------
 //Command: generate_target bd_74fb_wrapper.bd
 //Design : bd_74fb_wrapper
@@ -274,16 +275,16 @@ module bd_74fb_wrapper
   input S01_AXI_bready;
   output [1:0]S01_AXI_bresp;
   output S01_AXI_bvalid;
-  output [127:0]S01_AXI_rdata;
+  output [63:0]S01_AXI_rdata;
   output [3:0]S01_AXI_rid;
   output S01_AXI_rlast;
   input S01_AXI_rready;
   output [1:0]S01_AXI_rresp;
   output S01_AXI_rvalid;
-  input [127:0]S01_AXI_wdata;
+  input [63:0]S01_AXI_wdata;
   input S01_AXI_wlast;
   output S01_AXI_wready;
-  input [15:0]S01_AXI_wstrb;
+  input [7:0]S01_AXI_wstrb;
   input S01_AXI_wvalid;
   input aclk;
   input aclk1;
@@ -417,16 +418,16 @@ module bd_74fb_wrapper
   wire S01_AXI_bready;
   wire [1:0]S01_AXI_bresp;
   wire S01_AXI_bvalid;
-  wire [127:0]S01_AXI_rdata;
+  wire [63:0]S01_AXI_rdata;
   wire [3:0]S01_AXI_rid;
   wire S01_AXI_rlast;
   wire S01_AXI_rready;
   wire [1:0]S01_AXI_rresp;
   wire S01_AXI_rvalid;
-  wire [127:0]S01_AXI_wdata;
+  wire [63:0]S01_AXI_wdata;
   wire S01_AXI_wlast;
   wire S01_AXI_wready;
-  wire [15:0]S01_AXI_wstrb;
+  wire [7:0]S01_AXI_wstrb;
   wire S01_AXI_wvalid;
   wire aclk;
   wire aclk1;

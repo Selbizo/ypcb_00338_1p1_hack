@@ -14,3 +14,6 @@ set_property LOC GTXE2_CHANNEL_X0Y17 [get_cells {top_i/xdma_0/inst/top_xdma_0_0_
 set_property PACKAGE_PIN T2 [get_ports {pci_express_x8_txp[6]}]
 set_property LOC GTXE2_CHANNEL_X0Y16 [get_cells {top_i/xdma_0/inst/top_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[7].gt_wrapper_i/gtx_channel.gtxe2_channel_i}]
 set_property PACKAGE_PIN U4 [get_ports {pci_express_x8_txp[7]}]
+
+set_property PACKAGE_PIN Y26 [get_ports pcie_perstn]
+set_property IOSTANDARD LVCMOS18 [get_ports pcie_perstn]

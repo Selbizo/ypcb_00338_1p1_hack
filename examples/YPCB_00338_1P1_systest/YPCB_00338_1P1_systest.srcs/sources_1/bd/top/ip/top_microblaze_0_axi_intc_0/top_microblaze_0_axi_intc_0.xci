@@ -4,7 +4,7 @@
     "xci_name": "top_microblaze_0_axi_intc_0",
     "cell_name": "microblaze_0_axi_intc",
     "component_reference": "xilinx.com:ip:axi_intc:4.1",
-    "ip_revision": "17",
+    "ip_revision": "20",
     "gen_directory": "../../../../../../YPCB_00338_1P1_systest.gen/sources_1/bd/top/ip/top_microblaze_0_axi_intc_0",
     "parameters": {
       "component_parameters": {
@@ -45,8 +45,8 @@
         "C_NUM_INTR_INPUTS": [ { "value": "5", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_NUM_SW_INTR": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_KIND_OF_INTR": [ { "value": "0xffffffec", "resolve_type": "generated", "format": "bitString", "usage": "all" } ],
-        "C_KIND_OF_EDGE": [ { "value": "0xffffffff", "resolve_type": "generated", "format": "bitString", "usage": "all" } ],
-        "C_KIND_OF_LVL": [ { "value": "0xffffffff", "resolve_type": "generated", "format": "bitString", "usage": "all" } ],
+        "C_KIND_OF_EDGE": [ { "value": "0xFFFFFFFF", "resolve_type": "generated", "format": "bitString", "usage": "all" } ],
+        "C_KIND_OF_LVL": [ { "value": "0xFFFFFFFF", "resolve_type": "generated", "format": "bitString", "usage": "all" } ],
         "C_ASYNC_INTR": [ { "value": "0xFFFFFFEC", "resolve_type": "generated", "format": "bitString", "usage": "all" } ],
         "C_NUM_SYNC_FF": [ { "value": "2", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_ADDR_WIDTH": [ { "value": "32", "resolve_type": "generated", "format": "long", "usage": "all" } ],
@@ -67,7 +67,7 @@
       },
       "project_parameters": {
         "ARCHITECTURE": [ { "value": "kintex7" } ],
-        "BASE_BOARD_PART": [ { "value": "tiferking.cn:ypcb003381p1:part0:1.0" } ],
+        "BASE_BOARD_PART": [ { "value": "xilinx:xc7k480t_hhhl_ac:part0:1.0" } ],
         "BOARD_CONNECTIONS": [ { "value": "" } ],
         "DEVICE": [ { "value": "xc7k480t" } ],
         "PACKAGE": [ { "value": "ffg1156" } ],
@@ -76,19 +76,17 @@
         "SIMULATOR_LANGUAGE": [ { "value": "MIXED" } ],
         "SPEEDGRADE": [ { "value": "-2" } ],
         "STATIC_POWER": [ { "value": "" } ],
-        "TEMPERATURE_GRADE": [ { "value": "" } ],
-        "USE_RDI_CUSTOMIZATION": [ { "value": "TRUE" } ],
-        "USE_RDI_GENERATION": [ { "value": "TRUE" } ]
+        "TEMPERATURE_GRADE": [ { "value": "" } ]
       },
       "runtime_parameters": {
         "IPCONTEXT": [ { "value": "IP_Integrator" } ],
-        "IPREVISION": [ { "value": "17" } ],
+        "IPREVISION": [ { "value": "20" } ],
         "MANAGED": [ { "value": "TRUE" } ],
         "OUTPUTDIR": [ { "value": "../../../../../../YPCB_00338_1P1_systest.gen/sources_1/bd/top/ip/top_microblaze_0_axi_intc_0" } ],
         "SELECTEDSIMMODEL": [ { "value": "" } ],
         "SHAREDDIR": [ { "value": "../../ipshared" } ],
-        "SWVERSION": [ { "value": "2022.2" } ],
-        "SYNTHESISFLOW": [ { "value": "OUT_OF_CONTEXT" } ]
+        "SWVERSION": [ { "value": "2024.2" } ],
+        "SYNTHESISFLOW": [ { "value": "GLOBAL" } ]
       }
     },
     "boundary": {
@@ -258,7 +256,7 @@
           "abstraction_type": "xilinx.com:signal:interrupt_rtl:1.0",
           "mode": "slave",
           "parameters": {
-            "SENSITIVITY": [ { "value": "LEVEL_HIGH:NULL:NULL:LEVEL_HIGH:LEVEL_HIGH", "value_src": "ip_propagated", "value_permission": "bd", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ],
+            "SENSITIVITY": [ { "value": "LEVEL_HIGH:NULL:NULL:LEVEL_HIGH:LEVEL_HIGH", "value_src": "ip_propagated", "value_permission": "bd", "resolve_type": "generated", "usage": "all" } ],
             "PortWidth": [ { "value": "5", "value_src": "ip_propagated", "value_permission": "bd", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ]
           },
           "port_maps": {
@@ -458,7 +456,7 @@
                     }
                   }
                 },
-                "IVAR[0]": {
+                "IVAR_0": {
                   "address_offset": "0x100",
                   "size": 32,
                   "display_name": "Interrupt Vector Address Register 0",
@@ -477,7 +475,7 @@
                     }
                   }
                 },
-                "IVAR[1]": {
+                "IVAR_1": {
                   "address_offset": "0x104",
                   "size": 32,
                   "display_name": "Interrupt Vector Address Register 1",
@@ -496,7 +494,7 @@
                     }
                   }
                 },
-                "IVAR[2]": {
+                "IVAR_2": {
                   "address_offset": "0x108",
                   "size": 32,
                   "display_name": "Interrupt Vector Address Register 2",
@@ -515,7 +513,7 @@
                     }
                   }
                 },
-                "IVAR[3]": {
+                "IVAR_3": {
                   "address_offset": "0x10C",
                   "size": 32,
                   "display_name": "Interrupt Vector Address Register 3",
@@ -534,7 +532,7 @@
                     }
                   }
                 },
-                "IVAR[4]": {
+                "IVAR_4": {
                   "address_offset": "0x110",
                   "size": 32,
                   "display_name": "Interrupt Vector Address Register 4",

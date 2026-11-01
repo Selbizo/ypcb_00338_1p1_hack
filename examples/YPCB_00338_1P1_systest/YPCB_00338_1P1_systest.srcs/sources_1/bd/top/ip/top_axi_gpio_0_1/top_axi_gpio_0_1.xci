@@ -4,7 +4,7 @@
     "xci_name": "top_axi_gpio_0_1",
     "cell_name": "axi_gpio_0",
     "component_reference": "xilinx.com:ip:axi_gpio:2.0",
-    "ip_revision": "29",
+    "ip_revision": "35",
     "gen_directory": "../../../../../../YPCB_00338_1P1_systest.gen/sources_1/bd/top/ip/top_axi_gpio_0_1",
     "parameters": {
       "component_parameters": {
@@ -44,7 +44,7 @@
       },
       "project_parameters": {
         "ARCHITECTURE": [ { "value": "kintex7" } ],
-        "BASE_BOARD_PART": [ { "value": "tiferking.cn:ypcb003381p1:part0:1.0" } ],
+        "BASE_BOARD_PART": [ { "value": "xilinx:xc7k480t_hhhl_ac:part0:1.0" } ],
         "BOARD_CONNECTIONS": [ { "value": "" } ],
         "DEVICE": [ { "value": "xc7k480t" } ],
         "PACKAGE": [ { "value": "ffg1156" } ],
@@ -53,19 +53,17 @@
         "SIMULATOR_LANGUAGE": [ { "value": "MIXED" } ],
         "SPEEDGRADE": [ { "value": "-2" } ],
         "STATIC_POWER": [ { "value": "" } ],
-        "TEMPERATURE_GRADE": [ { "value": "" } ],
-        "USE_RDI_CUSTOMIZATION": [ { "value": "TRUE" } ],
-        "USE_RDI_GENERATION": [ { "value": "TRUE" } ]
+        "TEMPERATURE_GRADE": [ { "value": "" } ]
       },
       "runtime_parameters": {
         "IPCONTEXT": [ { "value": "IP_Integrator" } ],
-        "IPREVISION": [ { "value": "29" } ],
+        "IPREVISION": [ { "value": "35" } ],
         "MANAGED": [ { "value": "TRUE" } ],
         "OUTPUTDIR": [ { "value": "../../../../../../YPCB_00338_1P1_systest.gen/sources_1/bd/top/ip/top_axi_gpio_0_1" } ],
         "SELECTEDSIMMODEL": [ { "value": "" } ],
         "SHAREDDIR": [ { "value": "../../ipshared" } ],
-        "SWVERSION": [ { "value": "2022.2" } ],
-        "SYNTHESISFLOW": [ { "value": "OUT_OF_CONTEXT" } ]
+        "SWVERSION": [ { "value": "2024.2" } ],
+        "SYNTHESISFLOW": [ { "value": "GLOBAL" } ]
       }
     },
     "boundary": {
@@ -121,8 +119,8 @@
             "HAS_BRESP": [ { "value": "1", "value_src": "constant", "value_permission": "bd", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
             "HAS_RRESP": [ { "value": "1", "value_src": "constant", "value_permission": "bd", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
             "SUPPORTS_NARROW_BURST": [ { "value": "0", "value_src": "ip_propagated", "value_permission": "bd", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
-            "NUM_READ_OUTSTANDING": [ { "value": "1", "value_permission": "bd", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
-            "NUM_WRITE_OUTSTANDING": [ { "value": "1", "value_permission": "bd", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
+            "NUM_READ_OUTSTANDING": [ { "value": "2", "value_src": "default_prop", "value_permission": "bd", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
+            "NUM_WRITE_OUTSTANDING": [ { "value": "2", "value_src": "default_prop", "value_permission": "bd", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
             "MAX_BURST_LENGTH": [ { "value": "1", "value_src": "ip_propagated", "value_permission": "bd", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
             "PHASE": [ { "value": "0.0", "value_src": "ip_propagated", "value_permission": "bd", "resolve_type": "generated", "format": "float", "is_ips_inferred": true, "is_static_object": false } ],
             "CLK_DOMAIN": [ { "value": "/clk_wiz_1_clk_out1", "value_src": "ip_propagated", "value_permission": "bd", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ],
@@ -239,7 +237,7 @@
                   "access": "read-write",
                   "reset_value": "0x0",
                   "fields": {
-                    "Channel_1_GPIO_DATA": {
+                    "CH1_DATA": {
                       "bit_offset": 0,
                       "bit_width": 3,
                       "display_name": "Channel_1_GPIO_DATA",
@@ -258,7 +256,7 @@
                   "access": "read-write",
                   "reset_value": "0x0",
                   "fields": {
-                    "Channel_1_GPIO_TRI": {
+                    "CH1_TRI": {
                       "bit_offset": 0,
                       "bit_width": 3,
                       "display_name": "Channel_1_GPIO_DATA",
@@ -277,7 +275,7 @@
                   "access": "read-write",
                   "reset_value": "0x0",
                   "fields": {
-                    "Channel_2_GPIO_DATA": {
+                    "CH2_DATA": {
                       "bit_offset": 0,
                       "bit_width": 1,
                       "display_name": "Channel_2_GPIO_DATA",
@@ -296,7 +294,7 @@
                   "access": "read-write",
                   "reset_value": "0x0",
                   "fields": {
-                    "Channel_2_GPIO_TRI": {
+                    "CH2_TRI": {
                       "bit_offset": 0,
                       "bit_width": 1,
                       "display_name": "Channel_2_GPIO_DATA",
@@ -315,7 +313,7 @@
                   "access": "read-write",
                   "reset_value": "0x0",
                   "fields": {
-                    "Global_Interrupt_Enable": {
+                    "INT_EN": {
                       "bit_offset": 31,
                       "bit_width": 1,
                       "display_name": "Global_Interrupt_Enable",
@@ -334,7 +332,7 @@
                   "access": "read-write",
                   "reset_value": "0x0",
                   "fields": {
-                    "Channel_1_Interrupt_Enable": {
+                    "CH1_INT_EN": {
                       "bit_offset": 0,
                       "bit_width": 1,
                       "display_name": "Channel_1_Interrupt_Enable",
@@ -342,7 +340,7 @@
                       "is_volatile": true,
                       "access": "read-write"
                     },
-                    "Channel_2_Interrupt_Enable": {
+                    "CH2_INT_EN": {
                       "bit_offset": 1,
                       "bit_width": 1,
                       "display_name": "Channel_2_Interrupt_Enable",
@@ -361,7 +359,7 @@
                   "access": "read-write",
                   "reset_value": "0x0",
                   "fields": {
-                    "Channel_1_Interrupt_Status": {
+                    "CH1_INT_S": {
                       "bit_offset": 0,
                       "bit_width": 1,
                       "display_name": "Channel_1_Interrupt_Status",
@@ -369,7 +367,7 @@
                       "is_volatile": true,
                       "access": "read-write"
                     },
-                    "Channel_2_Interrupt_Status": {
+                    "CH2_INT_S": {
                       "bit_offset": 1,
                       "bit_width": 1,
                       "display_name": "Channel_2_Interrupt_Status",

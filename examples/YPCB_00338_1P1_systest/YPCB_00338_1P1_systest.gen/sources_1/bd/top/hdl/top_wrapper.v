@@ -1,8 +1,9 @@
 //Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+//Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 //--------------------------------------------------------------------------------
-//Tool Version: Vivado v.2022.2 (lin64) Build 3671981 Fri Oct 14 04:59:54 MDT 2022
-//Date        : Wed Jan  1 02:24:09 2025
-//Host        : tiferking-Virtual-Machine running 64-bit Ubuntu 22.04.5 LTS
+//Tool Version: Vivado v.2024.2 (lin64) Build 5239630 Fri Nov 08 22:34:34 MST 2024
+//Date        : Sun Nov  1 20:31:48 2026
+//Host        : selbizopc-System-Product-Name running 64-bit Ubuntu 24.04.5 LTS
 //Command     : generate_target top_wrapper.bd
 //Design      : top_wrapper
 //Purpose     : IP block netlist
@@ -109,10 +110,10 @@ module top_wrapper
   inout iic_pcie_scl_io;
   inout iic_pcie_sda_io;
   output [2:0]led_3bits_tri_o;
-  input [7:0]pci_express_x8_rxn;
-  input [7:0]pci_express_x8_rxp;
-  output [7:0]pci_express_x8_txn;
-  output [7:0]pci_express_x8_txp;
+  input [0:0]pci_express_x8_rxn;
+  input [0:0]pci_express_x8_rxp;
+  output [0:0]pci_express_x8_txn;
+  output [0:0]pci_express_x8_txp;
   input pcie_perstn;
   input pcie_refclk_clk_n;
   input pcie_refclk_clk_p;
@@ -238,10 +239,10 @@ module top_wrapper
   wire iic_pcie_sda_o;
   wire iic_pcie_sda_t;
   wire [2:0]led_3bits_tri_o;
-  wire [7:0]pci_express_x8_rxn;
-  wire [7:0]pci_express_x8_rxp;
-  wire [7:0]pci_express_x8_txn;
-  wire [7:0]pci_express_x8_txp;
+  wire [0:0]pci_express_x8_rxn;
+  wire [0:0]pci_express_x8_rxp;
+  wire [0:0]pci_express_x8_txn;
+  wire [0:0]pci_express_x8_txp;
   wire pcie_perstn;
   wire pcie_refclk_clk_n;
   wire pcie_refclk_clk_p;
