@@ -17,3 +17,20 @@ set_property PACKAGE_PIN U4 [get_ports {pci_express_x8_txp[7]}]
 
 set_property PACKAGE_PIN Y26 [get_ports pcie_perstn]
 set_property IOSTANDARD LVCMOS18 [get_ports pcie_perstn]
+
+###################### Boot from BPI flash ######################
+# The board is wired for SYNCHRONOUS BPI (flash ADV#/CLK are used). With the
+# default asynchronous mode CCLK is not generated, the flash never returns
+# data and configuration from flash fails (BOOT_STATUS.WRAP_ERROR / no boot).
+set_property BITSTREAM.CONFIG.BPI_SYNC_MODE Type1 [current_design]
+# Default is 3 MHz => ~52 s to configure 18 MB. 33 MHz boots in ~5 s.
+set_property BITSTREAM.CONFIG.CONFIGRATE   33    [current_design]
+# Bank 0 / config banks are 1.8 V on this board (also silences CFGBVS-1 DRC).
+set_property CFGBVS GND [current_design]
+set_property CONFIG_VOLTAGE 1.8 [current_design]
+#
+# NOTE for JTAG-only debug builds: with the default StartUpClk=Cclk the startup
+# sequence never completes over JTAG (CCLK is not clocked in JTAG mode), so
+# programming fails with "End of startup status: LOW". For a JTAG test image add
+#   set_property BITSTREAM.STARTUP.STARTUPCLK JtagClk [current_design]
+# Keep Cclk (default) for the image that is written to the BPI flash.
