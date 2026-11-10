@@ -53,7 +53,8 @@
       "xdma_0": "",
       "util_ds_buf": "",
       "axi_gpio_0": "",
-      "axi_smc": ""
+      "axi_smc": "",
+      "usr_gpio": ""
     },
     "interface_ports": {
       "DDR3_0": {
@@ -2449,6 +2450,15 @@
           "SYS_RST_N_BOARD_INTERFACE": {
             "value": "Custom"
           },
+          "axilite_master_en": {
+            "value": "true"
+          },
+          "axilite_master_scale": {
+            "value": "Kilobytes"
+          },
+          "axilite_master_size": {
+            "value": "64"
+          },
           "pl_link_cap_max_link_speed": {
             "value": "5.0_GT/s"
           },
@@ -2466,6 +2476,16 @@
               "maximum": "0xFFFFFFFFFFFFFFFF",
               "width": "64"
             }
+          },
+          "M_AXI_LITE": {
+            "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+            "mode": "Master",
+            "address_space_ref": "M_AXI_LITE",
+            "base_address": {
+              "minimum": "0x00000000",
+              "maximum": "0xFFFFFFFF",
+              "width": "32"
+            }
           }
         },
         "addressing": {
@@ -2473,6 +2493,10 @@
             "M_AXI": {
               "range": "16E",
               "width": "64"
+            },
+            "M_AXI_LITE": {
+              "range": "4G",
+              "width": "32"
             }
           }
         }
@@ -2626,6 +2650,24 @@
                 "value": "0"
               }
             }
+          }
+        }
+      },
+      "usr_gpio": {
+        "vlnv": "xilinx.com:ip:axi_gpio:2.0",
+        "ip_revision": "35",
+        "xci_name": "top_usr_gpio_0",
+        "xci_path": "ip/top_usr_gpio_0/top_usr_gpio_0.xci",
+        "inst_hier_path": "usr_gpio",
+        "parameters": {
+          "C_ALL_OUTPUTS": {
+            "value": "1"
+          },
+          "C_DOUT_DEFAULT": {
+            "value": "0x12345678"
+          },
+          "C_GPIO_WIDTH": {
+            "value": "32"
           }
         }
       }
@@ -2791,6 +2833,12 @@
         "interface_ports": [
           "xdma_0/M_AXI",
           "axi_smc/S01_AXI"
+        ]
+      },
+      "xdma_0_M_AXI_LITE": {
+        "interface_ports": [
+          "xdma_0/M_AXI_LITE",
+          "usr_gpio/S_AXI"
         ]
       },
       "xdma_0_pcie_mgt": {
@@ -3003,13 +3051,15 @@
         "ports": [
           "xdma_0/axi_aclk",
           "axi_smc/aclk3",
-          "microblaze_0_axi_periph/M07_ACLK"
+          "microblaze_0_axi_periph/M07_ACLK",
+          "usr_gpio/s_axi_aclk"
         ]
       },
       "xdma_0_axi_aresetn": {
         "ports": [
           "xdma_0/axi_aresetn",
-          "microblaze_0_axi_periph/M07_ARESETN"
+          "microblaze_0_axi_periph/M07_ARESETN",
+          "usr_gpio/s_axi_aresetn"
         ]
       }
     },
@@ -3111,6 +3161,15 @@
                 "address_block": "/mig_7series_0/c1_memmap/c1_memaddr",
                 "offset": "0x0000000080000000",
                 "range": "2G"
+              }
+            }
+          },
+          "M_AXI_LITE": {
+            "segments": {
+              "SEG_usr_gpio_Reg": {
+                "address_block": "/usr_gpio/S_AXI/Reg",
+                "offset": "0x00000000",
+                "range": "64K"
               }
             }
           }
