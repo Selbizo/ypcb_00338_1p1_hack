@@ -1,0 +1,37 @@
+# ---- Vivado generated ----
+hw/accel.runs/
+hw/accel.gen/
+hw/accel.cache/
+hw/accel.hw/
+hw/accel.sim/
+hw/accel.ip_user_files/
+hw/accel.srcs/utils_1/
+hw/.Xil/
+hw/*.jou
+hw/*.log
+hw/*.pb
+hw/*.str
+hw/*.dcp
+hw/*.bit
+hw/*.bin
+hw/*.mcs
+hw/*.prm
+
+# ---- generated IP (rebuilt by hls/build_all.sh) ----
+hw/ip_repo/
+
+# ---- Vitis HLS generated ----
+hls/**/solution*/
+hls/**/hls.app
+hls/**/hls.log
+hls/**/*.zip
+
+# ---- third-party (fetched by scripts/fetch_vision.sh) ----
+hls/third_party/
+
+# ---- host build ----
+host/build/
+
+# ---- tool logs ----
+*.log
+*.jou
