@@ -34,4 +34,29 @@ cv::Mat DdrLoopback::process(const cv::Mat& frame) {
     return dst;
 }
 
+VdmaPassthrough::VdmaPassthrough(Xdma& xdma, UserBar& bar, uint64_t in_addr, uint64_t out_addr)
+    : xdma_(xdma), bar_(bar), vdma_(bar, 0x0), in_(in_addr), out_(out_addr) {}
+
+cv::Mat VdmaPassthrough::process(const cv::Mat& frame) {
+    cv::Mat src = frame.isContinuous() ? frame : frame.clone();
+    cv::Mat dst(src.size(), src.type());
+    const size_t bytes = src.total() * src.elemSize();
+
+    auto t0 = std::chrono::steady_clock::now();
+    xdma_.write(in_, src.data, bytes);
+    t_.upload_ms = since_ms(t0);
+
+    vdma_.setup(src.cols, src.rows, static_cast<int>(src.elemSize()), in_, out_);
+    t0 = std::chrono::steady_clock::now();
+    vdma_.start();
+    if (!vdma_.wait_done()) throw std::runtime_error("VDMA transfer failed");
+    t_.process_ms = since_ms(t0);
+
+    t0 = std::chrono::steady_clock::now();
+    xdma_.read(out_, dst.data, bytes);
+    t_.download_ms = since_ms(t0);
+
+    return dst;
+}
+
 }  // namespace accel

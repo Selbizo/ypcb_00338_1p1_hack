@@ -15,7 +15,10 @@
 #include <iostream>
 #include <string>
 
+#include <memory>
+
 #include "pipeline.hpp"
+#include "vdma.hpp"
 #include "xdma.hpp"
 
 namespace {
@@ -28,6 +31,7 @@ struct Options {
     bool headless = false;
     bool synthetic = false;
     bool verify = false;
+    bool vdma = false;
     std::string out = ".";
 };
 
@@ -41,6 +45,7 @@ void usage(const char* argv0) {
         "  --headless     no window, save one PNG and print stats\n"
         "  --synthetic    do not open a camera, generate a moving pattern\n"
         "  --verify       compare loopback output with the input\n"
+        "  --vdma         run through VDMA + passthrough kernel (M0)\n"
         "  --out DIR      directory for --headless output\n",
         argv0);
 }
@@ -63,6 +68,7 @@ Options parse(int argc, char** argv) {
         else if (a == "--headless") o.headless = true;
         else if (a == "--synthetic") o.synthetic = true;
         else if (a == "--verify") o.verify = true;
+        else if (a == "--vdma") o.vdma = true;
         else if (a == "--out") o.out = next("--out");
         else if (a == "-h" || a == "--help") { usage(argv[0]); std::exit(0); }
         else { std::fprintf(stderr, "unknown option: %s\n", a.c_str()); usage(argv[0]); std::exit(2); }
@@ -108,9 +114,16 @@ int main(int argc, char** argv) {
     }
 
     accel::Xdma xdma;
-    accel::DdrLoopback pipe(xdma);
+    std::unique_ptr<accel::UserBar> bar;
+    std::unique_ptr<accel::IVideoPipeline> pipe;
+    if (opt.vdma) {
+        bar = std::make_unique<accel::UserBar>();
+        pipe = std::make_unique<accel::VdmaPassthrough>(xdma, *bar);
+    } else {
+        pipe = std::make_unique<accel::DdrLoopback>(xdma);
+    }
 
-    std::printf("pipeline: %s\n", pipe.name());
+    std::printf("pipeline: %s\n", pipe->name());
     if (opt.synthetic) std::printf("source: synthetic %dx%d\n", opt.width, opt.height);
     else std::printf("source: camera %d, %dx%d\n", opt.camera,
                      static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH)),
@@ -139,9 +152,9 @@ int main(int argc, char** argv) {
             }
         }
 
-        cv::Mat out = pipe.process(frame);
-        sum_up += pipe.timing().upload_ms;
-        sum_down += pipe.timing().download_ms;
+        cv::Mat out = pipe->process(frame);
+        sum_up += pipe->timing().upload_ms;
+        sum_down += pipe->timing().download_ms;
 
         if (opt.verify) {
             const double inf = cv::norm(out, frame, cv::NORM_INF);
@@ -152,7 +165,7 @@ int main(int argc, char** argv) {
         ++fps_n;
         const double t = now_s();
         if (t - fps_t0 >= 1.0) {
-            const auto& tm = pipe.timing();
+            const auto& tm = pipe->timing();
             std::printf("fps=%.1f  up=%.2f ms  down=%.2f ms  (%dx%d, %.2f MB)\n",
                         fps_n / (t - fps_t0), tm.upload_ms, tm.download_ms, out.cols, out.rows,
                         frame.total() * frame.elemSize() / 1e6);

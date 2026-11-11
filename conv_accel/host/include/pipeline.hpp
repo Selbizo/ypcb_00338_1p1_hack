@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <opencv2/core.hpp>
 
+#include "vdma.hpp"
 #include "xdma.hpp"
 
 namespace accel {
@@ -35,6 +36,26 @@ public:
 private:
     Xdma& xdma_;
     uint64_t addr_;
+    Timing t_;
+};
+
+// M0: frame -> DDR3 -> VDMA -> passthrough kernel -> VDMA -> DDR3 -> frame.
+class VdmaPassthrough final : public IVideoPipeline {
+public:
+    VdmaPassthrough(Xdma& xdma, UserBar& bar,
+                    uint64_t in_addr = 0x10000000ull,
+                    uint64_t out_addr = 0x20000000ull);
+
+    cv::Mat process(const cv::Mat& frame) override;
+    const Timing& timing() const override { return t_; }
+    const char* name() const override { return "vdma-passthrough"; }
+
+private:
+    Xdma& xdma_;
+    UserBar& bar_;
+    Vdma vdma_;
+    uint64_t in_;
+    uint64_t out_;
     Timing t_;
 };
 
