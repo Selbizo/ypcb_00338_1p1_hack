@@ -2,7 +2,8 @@
 #include <cstdint>
 #include <opencv2/core.hpp>
 
-#include "vdma.hpp"
+#include "axidma.hpp"
+#include "userbar.hpp"
 #include "xdma.hpp"
 
 namespace accel {
@@ -39,21 +40,23 @@ private:
     Timing t_;
 };
 
-// M0: frame -> DDR3 -> VDMA -> passthrough kernel -> VDMA -> DDR3 -> frame.
-class VdmaPassthrough final : public IVideoPipeline {
+// M0: frame -> DDR3 -> AXI DMA -> (kernel) -> AXI DMA -> DDR3 -> frame.
+// The on-card stream is 32 bits/pixel (RGBX), so a BGR8 frame is widened to
+// BGRA on the way in and narrowed back on the way out.
+class AxidmaPassthrough final : public IVideoPipeline {
 public:
-    VdmaPassthrough(Xdma& xdma, UserBar& bar,
-                    uint64_t in_addr = 0x10000000ull,
-                    uint64_t out_addr = 0x20000000ull);
+    AxidmaPassthrough(Xdma& xdma, UserBar& bar,
+                      uint64_t in_addr = 0x10000000ull,
+                      uint64_t out_addr = 0x20000000ull);
 
     cv::Mat process(const cv::Mat& frame) override;
     const Timing& timing() const override { return t_; }
-    const char* name() const override { return "vdma-passthrough"; }
+    const char* name() const override { return "axidma-passthrough"; }
 
 private:
     Xdma& xdma_;
     UserBar& bar_;
-    Vdma vdma_;
+    Axidma dma_;
     uint64_t in_;
     uint64_t out_;
     Timing t_;

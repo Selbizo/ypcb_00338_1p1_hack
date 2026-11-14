@@ -18,7 +18,8 @@
 #include <memory>
 
 #include "pipeline.hpp"
-#include "vdma.hpp"
+#include "axidma.hpp"
+#include "userbar.hpp"
 #include "xdma.hpp"
 
 namespace {
@@ -45,7 +46,8 @@ void usage(const char* argv0) {
         "  --headless     no window, save one PNG and print stats\n"
         "  --synthetic    do not open a camera, generate a moving pattern\n"
         "  --verify       compare loopback output with the input\n"
-        "  --vdma         run through VDMA + passthrough kernel (M0)\n"
+        "  --dma          run the frame through DDR3 -> AXI DMA -> DDR3 (M0)\n"
+        "  --vdma         alias for --dma (old name)\n"
         "  --out DIR      directory for --headless output\n",
         argv0);
 }
@@ -68,7 +70,7 @@ Options parse(int argc, char** argv) {
         else if (a == "--headless") o.headless = true;
         else if (a == "--synthetic") o.synthetic = true;
         else if (a == "--verify") o.verify = true;
-        else if (a == "--vdma") o.vdma = true;
+        else if (a == "--dma" || a == "--vdma") o.vdma = true;
         else if (a == "--out") o.out = next("--out");
         else if (a == "-h" || a == "--help") { usage(argv[0]); std::exit(0); }
         else { std::fprintf(stderr, "unknown option: %s\n", a.c_str()); usage(argv[0]); std::exit(2); }
@@ -118,7 +120,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<accel::IVideoPipeline> pipe;
     if (opt.vdma) {
         bar = std::make_unique<accel::UserBar>();
-        pipe = std::make_unique<accel::VdmaPassthrough>(xdma, *bar);
+        pipe = std::make_unique<accel::AxidmaPassthrough>(xdma, *bar);
     } else {
         pipe = std::make_unique<accel::DdrLoopback>(xdma);
     }

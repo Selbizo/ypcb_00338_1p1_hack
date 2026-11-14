@@ -14,7 +14,8 @@ find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs highgui videoio)
 add_library(accel STATIC
     src/xdma.cpp
     src/pipeline.cpp
-    src/vdma.cpp
+    src/userbar.cpp
+    src/axidma.cpp
 )
 target_include_directories(accel PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include

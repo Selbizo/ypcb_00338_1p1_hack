@@ -1,6 +1,9 @@
 #include "pipeline.hpp"
 
+#include <opencv2/imgproc.hpp>
+
 #include <chrono>
+#include <stdexcept>
 
 namespace accel {
 
@@ -34,29 +37,42 @@ cv::Mat DdrLoopback::process(const cv::Mat& frame) {
     return dst;
 }
 
-VdmaPassthrough::VdmaPassthrough(Xdma& xdma, UserBar& bar, uint64_t in_addr, uint64_t out_addr)
-    : xdma_(xdma), bar_(bar), vdma_(bar, 0x0), in_(in_addr), out_(out_addr) {}
+AxidmaPassthrough::AxidmaPassthrough(Xdma& xdma, UserBar& bar, uint64_t in_addr, uint64_t out_addr)
+    : xdma_(xdma), bar_(bar), dma_(bar, 0x0), in_(in_addr), out_(out_addr) {}
 
-cv::Mat VdmaPassthrough::process(const cv::Mat& frame) {
-    cv::Mat src = frame.isContinuous() ? frame : frame.clone();
-    cv::Mat dst(src.size(), src.type());
-    const size_t bytes = src.total() * src.elemSize();
+cv::Mat AxidmaPassthrough::process(const cv::Mat& frame) {
+    cv::Mat bgr = frame.isContinuous() ? frame : frame.clone();
+    cv::Mat bgra;
+    if (bgr.channels() == 3) {
+        cv::cvtColor(bgr, bgra, cv::COLOR_BGR2BGRA);
+    } else {
+        bgra = bgr;
+    }
+
+    const size_t bytes = bgra.total() * bgra.elemSize();
+    if (bytes > Axidma::kMaxBytes) throw std::runtime_error("frame exceeds the AXI DMA transfer limit");
 
     auto t0 = std::chrono::steady_clock::now();
-    xdma_.write(in_, src.data, bytes);
+    xdma_.write(in_, bgra.data, bytes);
     t_.upload_ms = since_ms(t0);
 
-    vdma_.setup(src.cols, src.rows, static_cast<int>(src.elemSize()), in_, out_);
+    cv::Mat out(bgra.size(), bgra.type());
+    dma_.setup(in_, out_, static_cast<uint32_t>(bytes));
     t0 = std::chrono::steady_clock::now();
-    vdma_.start();
-    if (!vdma_.wait_done(50)) throw std::runtime_error("VDMA transfer failed");
+    dma_.start();
+    if (!dma_.wait_done(3000)) throw std::runtime_error("AXI DMA transfer failed");
     t_.process_ms = since_ms(t0);
 
     t0 = std::chrono::steady_clock::now();
-    xdma_.read(out_, dst.data, bytes);
+    xdma_.read(out_, out.data, bytes);
     t_.download_ms = since_ms(t0);
 
-    return dst;
+    if (out.channels() == 4 && bgr.channels() == 3) {
+        cv::Mat bgr_out;
+        cv::cvtColor(out, bgr_out, cv::COLOR_BGRA2BGR);
+        return bgr_out;
+    }
+    return out;
 }
 
 }  // namespace accel
