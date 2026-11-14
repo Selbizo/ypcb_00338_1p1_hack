@@ -88,38 +88,29 @@ void Vdma::start() {
 void Vdma::stop() {
     bar_.wr(base_ + kMm2sCr, bar_.rd(base_ + kMm2sCr) & ~kCrRunStop);
     bar_.wr(base_ + kS2mmCr, bar_.rd(base_ + kS2mmCr) & ~kCrRunStop);
+    // wait until both channels report Halted so no AXI transactions remain
+    for (int i = 0; i < 5000; ++i) {
+        if ((mm2s_sr() & kSrHalted) && (s2mm_sr() & kSrHalted)) return;
+        std::this_thread::sleep_for(std::chrono::microseconds(200));
+    }
+    std::fprintf(stderr, "vdma: channels did not halt (mm2s=0x%08x s2mm=0x%08x)\n",
+                 mm2s_sr(), s2mm_sr());
 }
 
 uint32_t Vdma::mm2s_sr() const { return bar_.rd(base_ + kMm2sSr); }
 uint32_t Vdma::s2mm_sr() const { return bar_.rd(base_ + kS2mmSr); }
 
 bool Vdma::wait_done(int timeout_ms) {
-    // running continuously: wait until the MM2S frame counter advances
-    // (SR bits 23:16), then stop both channels.
-    const uint32_t f0 = (mm2s_sr() >> 16) & 0xFF;
-    const auto t0 = std::chrono::steady_clock::now();
-    for (;;) {
-        const uint32_t m = mm2s_sr();
-        const uint32_t s = s2mm_sr();
-        if ((m & 0x3F0) || (s & 0x3F0)) {
-            std::fprintf(stderr, "vdma error: mm2s_sr=0x%08x s2mm_sr=0x%08x\n", m, s);
-            stop();
-            return false;
-        }
-        const uint32_t f = (m >> 16) & 0xFF;
-        if (f != f0) {
-            stop();
-            return true;
-        }
-        const auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(
-                            std::chrono::steady_clock::now() - t0).count();
-        if (dt > timeout_ms) {
-            std::fprintf(stderr, "vdma timeout: mm2s_sr=0x%08x s2mm_sr=0x%08x\n", m, s);
-            stop();
-            return false;
-        }
-        std::this_thread::sleep_for(std::chrono::microseconds(200));
+    // continuous mode: let it run for a few frame times, then stop and check.
+    std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms));
+    const uint32_t m = mm2s_sr();
+    const uint32_t s = s2mm_sr();
+    stop();
+    if ((m & 0x3F0) || (s & 0x3F0)) {
+        std::fprintf(stderr, "vdma error: mm2s_sr=0x%08x s2mm_sr=0x%08x\n", m, s);
+        return false;
     }
+    return true;
 }
 
 }  // namespace accel

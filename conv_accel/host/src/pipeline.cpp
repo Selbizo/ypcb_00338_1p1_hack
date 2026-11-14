@@ -49,7 +49,7 @@ cv::Mat VdmaPassthrough::process(const cv::Mat& frame) {
     vdma_.setup(src.cols, src.rows, static_cast<int>(src.elemSize()), in_, out_);
     t0 = std::chrono::steady_clock::now();
     vdma_.start();
-    if (!vdma_.wait_done()) throw std::runtime_error("VDMA transfer failed");
+    if (!vdma_.wait_done(50)) throw std::runtime_error("VDMA transfer failed");
     t_.process_ms = since_ms(t0);
 
     t0 = std::chrono::steady_clock::now();

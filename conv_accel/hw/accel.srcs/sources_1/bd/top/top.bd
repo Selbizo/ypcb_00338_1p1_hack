@@ -55,7 +55,6 @@
       "axi_gpio_0": "",
       "axi_smc": "",
       "vdma_0": "",
-      "kernel_0": "",
       "axi_lite": {
         "s00_couplers": {}
       }
@@ -2755,13 +2754,6 @@
           }
         }
       },
-      "kernel_0": {
-        "vlnv": "user:hls:passthrough:1.0",
-        "ip_revision": "2114866845",
-        "xci_name": "top_kernel_0_0",
-        "xci_path": "ip/top_kernel_0_0/top_kernel_0_0.xci",
-        "inst_hier_path": "kernel_0"
-      },
       "axi_lite": {
         "vlnv": "xilinx.com:ip:axi_interconnect:2.1",
         "xci_path": "ip/top_axi_lite_0/top_axi_lite_0.xci",
@@ -2983,12 +2975,6 @@
           "mig_7series_0/S1_AXI"
         ]
       },
-      "kernel_0_video_out": {
-        "interface_ports": [
-          "kernel_0/video_out",
-          "vdma_0/S_AXIS_S2MM"
-        ]
-      },
       "microblaze_0_M_AXI_DC": {
         "interface_ports": [
           "microblaze_0/M_AXI_DC",
@@ -3106,7 +3092,7 @@
       "vdma_0_M_AXIS_MM2S": {
         "interface_ports": [
           "vdma_0/M_AXIS_MM2S",
-          "kernel_0/video_in"
+          "vdma_0/S_AXIS_S2MM"
         ]
       },
       "vdma_0_M_AXI_MM2S": {
@@ -3351,8 +3337,7 @@
           "vdma_0/m_axi_s2mm_aclk",
           "vdma_0/m_axis_mm2s_aclk",
           "vdma_0/s_axi_lite_aclk",
-          "vdma_0/s_axis_s2mm_aclk",
-          "kernel_0/ap_clk"
+          "vdma_0/s_axis_s2mm_aclk"
         ]
       },
       "xdma_0_axi_aresetn": {
@@ -3362,8 +3347,7 @@
           "axi_lite/ARESETN",
           "axi_lite/S00_ARESETN",
           "axi_lite/M00_ARESETN",
-          "vdma_0/axi_resetn",
-          "kernel_0/ap_rst_n"
+          "vdma_0/axi_resetn"
         ]
       }
     },
