@@ -147,3 +147,16 @@ API `IVideoPipeline::process(cv::Mat) -> cv::Mat` уже готов — доба
 (24 не делит 64). Следующий шаг — пересборка с `C_M_AXIS_MM2S_TDATA_WIDTH=32`
 и `C_S_AXIS_S2MM_TDATA_WIDTH=32` (плюс `C_NUM_FSTORES=1`,
 `linebuffer_depth=512`), кадры тогда RGBX.
+
+## Проверено после этого (тоже не помогло)
+
+- Поток **32 бита** (`c_m_axis_mm2s_tdata_width`/`c_s_axis_s2mm_tdata_width` = 32),
+  `c_num_fstores=1`, `linebuffer_depth=512`, `thresh=64` — пересобрано,
+  прошито: `SR=0x14011` на обоих каналах, данных нет.
+- **Полностью чистая пересборка** (`accel.gen`/`accel.runs`/`accel.cache`
+  удалены) — WNS +0.017, поведение то же.
+
+То есть проблема не в артефактах сборки и не в ширине потока. Команда
+корректна, DataMover её принимает и сразу возвращает internal error.
+Дальше имеет смысл либо моделирование VDMA отдельным тестбенчем, либо
+переход на AXI DMA (simple mode, поток 32 бита).

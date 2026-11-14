@@ -2713,16 +2713,22 @@
             "value": "64"
           },
           "c_m_axis_mm2s_tdata_width": {
-            "value": "24"
+            "value": "32"
           },
           "c_mm2s_linebuffer_depth": {
-            "value": "128"
+            "value": "512"
+          },
+          "c_mm2s_linebuffer_thresh": {
+            "value": "64"
           },
           "c_num_fstores": {
-            "value": "3"
+            "value": "1"
           },
           "c_s2mm_linebuffer_depth": {
-            "value": "128"
+            "value": "512"
+          },
+          "c_s2mm_linebuffer_thresh": {
+            "value": "64"
           },
           "c_use_fsync": {
             "value": "0"
