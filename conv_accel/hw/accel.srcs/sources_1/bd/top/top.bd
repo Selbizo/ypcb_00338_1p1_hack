@@ -2697,6 +2697,12 @@
         "xci_path": "ip/top_vdma_0_0/top_vdma_0_0.xci",
         "inst_hier_path": "vdma_0",
         "parameters": {
+          "c_flush_on_fsync": {
+            "value": "0"
+          },
+          "c_include_internal_genlock": {
+            "value": "0"
+          },
           "c_include_sg": {
             "value": "0"
           },
@@ -2717,6 +2723,15 @@
           },
           "c_s2mm_linebuffer_depth": {
             "value": "128"
+          },
+          "c_use_fsync": {
+            "value": "0"
+          },
+          "c_use_mm2s_fsync": {
+            "value": "0"
+          },
+          "c_use_s2mm_fsync": {
+            "value": "0"
           }
         },
         "interface_ports": {
