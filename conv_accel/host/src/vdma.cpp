@@ -79,29 +79,43 @@ void Vdma::setup(int width, int height, int bpp, uint64_t src, uint64_t dst) {
 }
 
 void Vdma::start() {
-    // clear stale status, then run one frame on both channels
-    bar_.wr(base_ + kMm2sSr, 0xFFFFFFFF);
-    bar_.wr(base_ + kS2mmSr, 0xFFFFFFFF);
-    bar_.wr(base_ + kMm2sCr, kCrRunStop | kCrFrameCntEn);
-    bar_.wr(base_ + kS2mmCr, kCrRunStop | kCrFrameCntEn);
+    // continuous mode (FrameCntEn=0): run until stopped.
+    // read-modify-write so genlock/tail bits from reset are preserved.
+    bar_.wr(base_ + kMm2sCr, kCrRunStop);
+    bar_.wr(base_ + kS2mmCr, kCrRunStop);
+}
+
+void Vdma::stop() {
+    bar_.wr(base_ + kMm2sCr, bar_.rd(base_ + kMm2sCr) & ~kCrRunStop);
+    bar_.wr(base_ + kS2mmCr, bar_.rd(base_ + kS2mmCr) & ~kCrRunStop);
 }
 
 uint32_t Vdma::mm2s_sr() const { return bar_.rd(base_ + kMm2sSr); }
 uint32_t Vdma::s2mm_sr() const { return bar_.rd(base_ + kS2mmSr); }
 
 bool Vdma::wait_done(int timeout_ms) {
+    // running continuously: wait until the MM2S frame counter advances
+    // (SR bits 23:16), then stop both channels.
+    const uint32_t f0 = (mm2s_sr() >> 16) & 0xFF;
     const auto t0 = std::chrono::steady_clock::now();
     for (;;) {
         const uint32_t m = mm2s_sr();
         const uint32_t s = s2mm_sr();
-        const bool m_done = (m & kSrIdle) || (m & kSrHalted);
-        const bool s_done = (s & kSrIdle) || (s & kSrHalted);
-        if (m_done && s_done && !(m & 0x3F0) && !(s & 0x3F0)) return true;
-
+        if ((m & 0x3F0) || (s & 0x3F0)) {
+            std::fprintf(stderr, "vdma error: mm2s_sr=0x%08x s2mm_sr=0x%08x\n", m, s);
+            stop();
+            return false;
+        }
+        const uint32_t f = (m >> 16) & 0xFF;
+        if (f != f0) {
+            stop();
+            return true;
+        }
         const auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(
                             std::chrono::steady_clock::now() - t0).count();
         if (dt > timeout_ms) {
             std::fprintf(stderr, "vdma timeout: mm2s_sr=0x%08x s2mm_sr=0x%08x\n", m, s);
+            stop();
             return false;
         }
         std::this_thread::sleep_for(std::chrono::microseconds(200));

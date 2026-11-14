@@ -33,6 +33,7 @@ public:
     // bytes_per_pixel * width = line size in bytes; stride == line size.
     void setup(int width, int height, int bytes_per_pixel, uint64_t src, uint64_t dst);
     void start();
+    void stop();
     bool wait_done(int timeout_ms = 3000);
 
     uint32_t mm2s_sr() const;
