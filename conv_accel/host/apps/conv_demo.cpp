@@ -33,6 +33,7 @@ struct Options {
     bool synthetic = false;
     bool verify = false;
     bool vdma = false;
+    bool compare = false;
     std::string out = ".";
 };
 
@@ -48,6 +49,7 @@ void usage(const char* argv0) {
         "  --verify       compare loopback output with the input\n"
         "  --dma          run the frame through DDR3 -> AXI DMA -> DDR3 (M0)\n"
         "  --vdma         alias for --dma (old name)\n"
+        "  --compare      show source | FPGA result | amplified difference\n"
         "  --out DIR      directory for --headless output\n",
         argv0);
 }
@@ -71,6 +73,7 @@ Options parse(int argc, char** argv) {
         else if (a == "--synthetic") o.synthetic = true;
         else if (a == "--verify") o.verify = true;
         else if (a == "--dma" || a == "--vdma") o.vdma = true;
+        else if (a == "--compare") o.compare = true;
         else if (a == "--out") o.out = next("--out");
         else if (a == "-h" || a == "--help") { usage(argv[0]); std::exit(0); }
         else { std::fprintf(stderr, "unknown option: %s\n", a.c_str()); usage(argv[0]); std::exit(2); }
@@ -90,6 +93,56 @@ cv::Mat synthetic_frame(cv::Size sz, int idx) {
     const int cx = sz.width / 2 + static_cast<int>(120.0 * std::sin(idx * 0.05));
     cv::circle(m, {cx, sz.height / 2}, sz.height / 8, {255, 255, 255}, -1);
     return m;
+}
+
+// Side-by-side view: source | FPGA result | amplified |difference|.
+// Panels are scaled down so that the window stays a reasonable size.
+cv::Mat compare_view(const cv::Mat& src, const cv::Mat& out, const std::string& status,
+                     double maxdiff, bool show_diff) {
+    const int bar = 26;
+    const int panel_w = 640;
+    const int panels = show_diff ? 3 : 2;
+    const double sc = std::min(1.0, static_cast<double>(panel_w) / src.cols);
+    const int pw = static_cast<int>(src.cols * sc);
+    const int ph = static_cast<int>(src.rows * sc);
+
+    cv::Mat a, b, d;
+    cv::resize(src, a, {pw, ph}, 0, 0, cv::INTER_AREA);
+    cv::resize(out, b, {pw, ph}, 0, 0, cv::INTER_AREA);
+    if (show_diff) {
+        cv::Mat diff;
+        cv::absdiff(src, out, diff);
+        cv::Mat gray;
+        cv::cvtColor(diff, gray, cv::COLOR_BGR2GRAY);
+        gray *= 16;  // amplify small differences
+        cv::cvtColor(gray, d, cv::COLOR_GRAY2BGR);
+        cv::resize(d, d, {pw, ph}, 0, 0, cv::INTER_AREA);
+    }
+
+    cv::Mat canvas(ph + bar, pw * panels, CV_8UC3, cv::Scalar(28, 28, 28));
+    a.copyTo(canvas(cv::Rect(0, bar, pw, ph)));
+    b.copyTo(canvas(cv::Rect(pw, bar, pw, ph)));
+    if (show_diff) d.copyTo(canvas(cv::Rect(2 * pw, bar, pw, ph)));
+
+    const auto txt = [&](const std::string& s, int x, cv::Scalar color) {
+        cv::putText(canvas, s, {x + 8, 18}, cv::FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv::LINE_AA);
+    };
+    txt("source (host)", 0, {210, 210, 210});
+    txt("FPGA result (AXI DMA loopback)", pw, {210, 210, 210});
+    if (show_diff) {
+        const std::string dl = maxdiff == 0.0 ? "|diff| x16  max=0  (bit-exact)"
+                                             : cv::format("|diff| x16  max=%g", maxdiff);
+        (void)dl;
+        txt(dl, 2 * pw, maxdiff == 0.0 ? cv::Scalar(120, 255, 120) : cv::Scalar(120, 180, 255));
+        if (maxdiff == 0.0) {
+            cv::putText(canvas, "no difference", {2 * pw + pw / 2 - 80, bar + ph / 2},
+                        cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(90, 90, 90), 1, cv::LINE_AA);
+        }
+    }
+    const int tw = cv::getTextSize(status, cv::FONT_HERSHEY_SIMPLEX, 0.4, 1, nullptr).width;
+    cv::putText(canvas, status, {pw * panels - tw - 8, 18}, cv::FONT_HERSHEY_SIMPLEX, 0.4,
+                {180, 200, 255}, 1, cv::LINE_AA);
+    return canvas;
 }
 
 double now_s() {
@@ -158,9 +211,10 @@ int main(int argc, char** argv) {
         sum_up += pipe->timing().upload_ms;
         sum_down += pipe->timing().download_ms;
 
+        double maxdiff = 0.0;
         if (opt.verify) {
-            const double inf = cv::norm(out, frame, cv::NORM_INF);
-            if (inf != 0.0) std::fprintf(stderr, "loopback mismatch: norm_inf=%g\n", inf);
+            maxdiff = cv::norm(out, frame, cv::NORM_INF);
+            if (maxdiff != 0.0) std::fprintf(stderr, "loopback mismatch: norm_inf=%g\n", maxdiff);
         }
 
         ++frame_no;
@@ -178,11 +232,27 @@ int main(int argc, char** argv) {
 
         if (headless) {
             if (!saved) {
-                const std::string path = opt.out + "/conv_demo.png";
-                cv::imwrite(path, out);
+                const std::string path = opt.out + (opt.compare ? "/compare.png" : "/conv_demo.png");
+                const cv::Mat img =
+                    opt.compare
+                        ? compare_view(frame, out,
+                                       cv::format("%dx%d  up %.2f / dma %.2f / down %.2f ms",
+                                                  out.cols, out.rows, pipe->timing().upload_ms,
+                                                  pipe->timing().process_ms,
+                                                  pipe->timing().download_ms),
+                                       maxdiff, opt.verify)
+                        : out;
+                cv::imwrite(path, img);
                 std::printf("saved %s\n", path.c_str());
                 saved = true;
             }
+        } else if (opt.compare) {
+            const auto& tm = pipe->timing();
+            const std::string st = cv::format("%dx%d  up %.2f / dma %.2f / down %.2f ms",
+                                              out.cols, out.rows, tm.upload_ms, tm.process_ms,
+                                              tm.download_ms);
+            cv::imshow("conv_accel", compare_view(frame, out, st, maxdiff, opt.verify));
+            if (cv::waitKey(1) == 27) break;
         } else {
             cv::imshow("conv_accel", out);
             if (cv::waitKey(1) == 27) break;
