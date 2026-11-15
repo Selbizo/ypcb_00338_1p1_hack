@@ -12,6 +12,7 @@
 //   video_in  : AXI4-Stream 32 bit (X ignored)
 //   video_out : AXI4-Stream 32 bit (X = 0xFF, TLAST on the last pixel)
 //   rows, cols: frame geometry (AXI4-Lite)
+//   coeff[25] : 5x5 coefficients (AXI4-Lite, 0x40..: two 16-bit values per word)
 //   shift     : out = clamp((sum k*p) >> shift)
 #include <hls_stream.h>
 #include <ap_axi_sdata.h>
@@ -75,12 +76,14 @@ void conv2d(hls::stream<axis_t>& video_in,
             hls::stream<axis_t>& video_out,
             int rows,
             int cols,
-            int shift) {
+            int shift,
+            short int coeff[KSIZE * KSIZE]) {
 #pragma HLS INTERFACE axis      port = video_in
 #pragma HLS INTERFACE axis      port = video_out
 #pragma HLS INTERFACE s_axilite port = rows
 #pragma HLS INTERFACE s_axilite port = cols
 #pragma HLS INTERFACE s_axilite port = shift
+#pragma HLS INTERFACE s_axilite port = coeff
 #pragma HLS INTERFACE s_axilite port = return
 
 #pragma HLS DATAFLOW
@@ -88,12 +91,8 @@ void conv2d(hls::stream<axis_t>& video_in,
     xf::cv::Mat<XF_8UC3, MAX_H, MAX_W, XF_NPPC1> src(rows, cols);
     xf::cv::Mat<XF_8UC3, MAX_H, MAX_W, XF_NPPC1> dst(rows, cols);
 
-    // 5x5 Gaussian, sum = 256 -> unity gain with shift = 8, no overflow.
-    short int k[KSIZE * KSIZE] = {1, 4, 6, 4, 1, 4, 16, 24, 16, 4, 6, 24, 36, 24, 6,
-                                  4, 16, 24, 16, 4, 1, 4, 6, 4, 1};
-
     load_frame(video_in, src);
     xf::cv::filter2D<XF_BORDER_REPLICATE, KSIZE, KSIZE, XF_8UC3, XF_8UC3, MAX_H, MAX_W, XF_NPPC1>(
-        src, dst, k, (unsigned char)shift);
+        src, dst, coeff, (unsigned char)shift);
     store_frame(dst, video_out);
 }

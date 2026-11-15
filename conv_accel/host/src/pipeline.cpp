@@ -37,8 +37,15 @@ cv::Mat DdrLoopback::process(const cv::Mat& frame) {
     return dst;
 }
 
-AxidmaConv2d::AxidmaConv2d(Xdma& xdma, UserBar& bar, uint64_t in_addr, uint64_t out_addr)
-    : xdma_(xdma), bar_(bar), dma_(bar, 0x0), conv_(bar, 0x1000), in_(in_addr), out_(out_addr) {}
+AxidmaConv2d::AxidmaConv2d(Xdma& xdma, UserBar& bar, const Filter& filter, uint64_t in_addr,
+                           uint64_t out_addr)
+    : xdma_(xdma),
+      bar_(bar),
+      dma_(bar, 0x0),
+      conv_(bar, 0x1000),
+      filter_(&filter),
+      in_(in_addr),
+      out_(out_addr) {}
 
 cv::Mat AxidmaConv2d::process(const cv::Mat& frame) {
     cv::Mat bgr = frame.isContinuous() ? frame : frame.clone();
@@ -57,7 +64,7 @@ cv::Mat AxidmaConv2d::process(const cv::Mat& frame) {
     t_.upload_ms = since_ms(t0);
 
     // start the kernel first, then the DMA; both must finish for a frame
-    conv_.configure(bgra.rows, bgra.cols, kShift);
+    conv_.configure(bgra.rows, bgra.cols, filter_->shift, filter_->k);
     conv_.start();
 
     cv::Mat out(bgra.size(), bgra.type());

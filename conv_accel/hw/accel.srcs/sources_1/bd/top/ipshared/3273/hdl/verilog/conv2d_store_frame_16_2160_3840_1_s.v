@@ -96,12 +96,12 @@ reg    img_cols_val_blk_n;
 wire   [22:0] empty_fu_95_p1;
 reg   [22:0] empty_reg_149;
 reg    ap_block_state1;
-wire  signed [23:0] empty_55_fu_99_p1;
-reg  signed [23:0] empty_55_reg_155;
-wire  signed [23:0] empty_56_fu_103_p1;
-reg  signed [23:0] empty_56_reg_160;
-wire   [11:0] empty_58_fu_107_p1;
-reg   [11:0] empty_58_reg_165;
+wire  signed [23:0] empty_43_fu_99_p1;
+reg  signed [23:0] empty_43_reg_155;
+wire  signed [23:0] empty_44_fu_103_p1;
+reg  signed [23:0] empty_44_reg_160;
+wire   [11:0] empty_46_fu_107_p1;
+reg   [11:0] empty_46_reg_165;
 wire    ap_CS_fsm_state2;
 wire   [23:0] grp_fu_91_p2;
 reg   [23:0] total_reg_180;
@@ -218,11 +218,11 @@ conv2d_mul_24s_24s_24_4_1 #(
     .din0_WIDTH( 24 ),
     .din1_WIDTH( 24 ),
     .dout_WIDTH( 24 ))
-mul_24s_24s_24_4_1_U152(
+mul_24s_24s_24_4_1_U335(
     .clk(ap_clk),
     .reset(ap_rst),
-    .din0(empty_56_reg_160),
-    .din1(empty_55_reg_155),
+    .din0(empty_44_reg_160),
+    .din1(empty_43_reg_155),
     .ce(1'b1),
     .dout(grp_fu_91_p2)
 );
@@ -233,7 +233,7 @@ conv2d_mul_12ns_23ns_35_5_1 #(
     .din0_WIDTH( 12 ),
     .din1_WIDTH( 23 ),
     .dout_WIDTH( 35 ))
-mul_12ns_23ns_35_5_1_U153(
+mul_12ns_23ns_35_5_1_U336(
     .clk(ap_clk),
     .reset(ap_rst),
     .din0(grp_fu_117_p0),
@@ -380,9 +380,9 @@ end
 
 always @ (posedge ap_clk) begin
     if (((1'b0 == ap_block_state1) & (1'b1 == ap_CS_fsm_state1))) begin
-        empty_55_reg_155 <= empty_55_fu_99_p1;
-        empty_56_reg_160 <= empty_56_fu_103_p1;
-        empty_58_reg_165 <= empty_58_fu_107_p1;
+        empty_43_reg_155 <= empty_43_fu_99_p1;
+        empty_44_reg_160 <= empty_44_fu_103_p1;
+        empty_46_reg_165 <= empty_46_fu_107_p1;
         empty_reg_149 <= empty_fu_95_p1;
     end
 end
@@ -620,17 +620,17 @@ end
 
 assign dst_data_read = grp_store_frame_16_2160_3840_1_Pipeline_store_rows_store_cols_fu_68_dst_data_read;
 
-assign empty_55_fu_99_p1 = img_rows_val_dout[23:0];
+assign empty_43_fu_99_p1 = img_rows_val_dout[23:0];
 
-assign empty_56_fu_103_p1 = img_cols_val_dout[23:0];
+assign empty_44_fu_103_p1 = img_cols_val_dout[23:0];
 
-assign empty_58_fu_107_p1 = img_rows_val_dout[11:0];
+assign empty_46_fu_107_p1 = img_rows_val_dout[11:0];
 
 assign empty_fu_95_p1 = img_cols_val_dout[22:0];
 
 assign grp_fu_117_p0 = grp_fu_117_p00;
 
-assign grp_fu_117_p00 = empty_58_reg_165;
+assign grp_fu_117_p00 = empty_46_reg_165;
 
 assign grp_fu_117_p1 = grp_fu_117_p10;
 

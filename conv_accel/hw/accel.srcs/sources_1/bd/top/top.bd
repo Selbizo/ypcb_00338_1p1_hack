@@ -3124,10 +3124,10 @@
         }
       },
       "conv2d_0": {
-        "vlnv": "user:hls:conv2d:2.0",
-        "ip_revision": "2114874993",
-        "xci_name": "top_conv2d_0_1",
-        "xci_path": "ip/top_conv2d_0_1/top_conv2d_0_1.xci",
+        "vlnv": "user:hls:conv2d:3.0",
+        "ip_revision": "2114875183",
+        "xci_name": "top_conv2d_0_2",
+        "xci_path": "ip/top_conv2d_0_2/top_conv2d_0_2.xci",
         "inst_hier_path": "conv2d_0"
       }
     },

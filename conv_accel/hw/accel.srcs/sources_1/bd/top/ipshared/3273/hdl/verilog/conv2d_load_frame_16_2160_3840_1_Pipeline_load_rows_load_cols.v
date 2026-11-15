@@ -65,7 +65,7 @@ reg    ap_enable_reg_pp0_iter1;
 reg    ap_idle_pp0;
 reg    ap_block_state2_pp0_stage0_iter1_grp1;
 reg    ap_block_pp0_stage0_subdone;
-wire   [0:0] icmp_ln36_fu_105_p2;
+wire   [0:0] icmp_ln37_fu_105_p2;
 reg    ap_condition_exit_pp0_iter0_stage0;
 wire    ap_loop_exit_ready;
 reg    ap_ready_int;
@@ -73,7 +73,7 @@ reg    video_in_TDATA_blk_n;
 wire    ap_block_pp0_stage0_grp1;
 reg    src_data_blk_n;
 reg   [22:0] indvar_flatten_fu_62;
-wire   [22:0] add_ln36_fu_111_p2;
+wire   [22:0] add_ln37_fu_111_p2;
 wire    ap_loop_init;
 reg    ap_block_pp0_stage0_11001;
 reg   [22:0] ap_sig_allocacmp_indvar_flatten_load;
@@ -147,8 +147,8 @@ end
 
 always @ (posedge ap_clk) begin
     if (((1'b0 == ap_block_pp0_stage0_11001) & (1'b1 == ap_CS_fsm_pp0_stage0))) begin
-        if (((icmp_ln36_fu_105_p2 == 1'd0) & (ap_enable_reg_pp0_iter0 == 1'b1))) begin
-            indvar_flatten_fu_62 <= add_ln36_fu_111_p2;
+        if (((icmp_ln37_fu_105_p2 == 1'd0) & (ap_enable_reg_pp0_iter0 == 1'b1))) begin
+            indvar_flatten_fu_62 <= add_ln37_fu_111_p2;
         end else if ((ap_loop_init == 1'b1)) begin
             indvar_flatten_fu_62 <= 23'd0;
         end
@@ -156,7 +156,7 @@ always @ (posedge ap_clk) begin
 end
 
 always @ (*) begin
-    if (((icmp_ln36_fu_105_p2 == 1'd1) & (1'b0 == ap_block_pp0_stage0_subdone) & (ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0))) begin
+    if (((icmp_ln37_fu_105_p2 == 1'd1) & (1'b0 == ap_block_pp0_stage0_subdone) & (ap_enable_reg_pp0_iter0 == 1'b1) & (1'b1 == ap_CS_fsm_pp0_stage0))) begin
         ap_condition_exit_pp0_iter0_stage0 = 1'b1;
     end else begin
         ap_condition_exit_pp0_iter0_stage0 = 1'b0;
@@ -246,7 +246,7 @@ always @ (*) begin
     endcase
 end
 
-assign add_ln36_fu_111_p2 = (ap_sig_allocacmp_indvar_flatten_load + 23'd1);
+assign add_ln37_fu_111_p2 = (ap_sig_allocacmp_indvar_flatten_load + 23'd1);
 
 assign ap_CS_fsm_pp0_stage0 = ap_CS_fsm[32'd0];
 
@@ -284,7 +284,7 @@ assign ap_loop_exit_ready = ap_condition_exit_pp0_iter0_stage0;
 
 assign ap_ready = ap_ready_sig;
 
-assign icmp_ln36_fu_105_p2 = ((ap_sig_allocacmp_indvar_flatten_load == bound) ? 1'b1 : 1'b0);
+assign icmp_ln37_fu_105_p2 = ((ap_sig_allocacmp_indvar_flatten_load == bound) ? 1'b1 : 1'b0);
 
 assign src_data_din = video_in_TDATA[23:0];
 

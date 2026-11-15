@@ -6,7 +6,7 @@
 
 `timescale 1 ns / 1 ps 
 
-(* CORE_GENERATION_INFO="conv2d_conv2d,hls_ip_2024_2,{HLS_INPUT_TYPE=cxx,HLS_INPUT_FLOAT=0,HLS_INPUT_FIXED=0,HLS_INPUT_PART=xc7k480t-ffg1156-2,HLS_INPUT_CLOCK=4.000000,HLS_INPUT_ARCH=dataflow,HLS_SYN_CLOCK=3.672000,HLS_SYN_LAT=-1,HLS_SYN_TPT=-1,HLS_SYN_MEM=30,HLS_SYN_DSP=0,HLS_SYN_FF=6722,HLS_SYN_LUT=5594,HLS_VERSION=2024_2}" *)
+(* CORE_GENERATION_INFO="conv2d_conv2d,hls_ip_2024_2,{HLS_INPUT_TYPE=cxx,HLS_INPUT_FLOAT=0,HLS_INPUT_FIXED=0,HLS_INPUT_PART=xc7k480t-ffg1156-2,HLS_INPUT_CLOCK=4.000000,HLS_INPUT_ARCH=dataflow,HLS_SYN_CLOCK=3.672000,HLS_SYN_LAT=-1,HLS_SYN_TPT=-1,HLS_SYN_MEM=30,HLS_SYN_DSP=0,HLS_SYN_FF=13595,HLS_SYN_LUT=6155,HLS_VERSION=2024_2}" *)
 
 module conv2d (
         s_axi_control_AWVALID,
@@ -50,7 +50,7 @@ module conv2d (
 );
 
 parameter    C_S_AXI_CONTROL_DATA_WIDTH = 32;
-parameter    C_S_AXI_CONTROL_ADDR_WIDTH = 6;
+parameter    C_S_AXI_CONTROL_ADDR_WIDTH = 7;
 parameter    C_S_AXI_DATA_WIDTH = 32;
 
 parameter C_S_AXI_CONTROL_WSTRB_WIDTH = (32 / 8);
@@ -99,19 +99,11 @@ input   video_out_TREADY;
 wire   [31:0] rows;
 wire   [31:0] cols;
 wire   [31:0] shift;
+wire   [15:0] coeff_q0;
 wire    ap_start;
 wire    ap_ready;
 wire    ap_done;
 wire    ap_idle;
-wire    entry_proc_U0_ap_start;
-wire    entry_proc_U0_ap_done;
-wire    entry_proc_U0_ap_continue;
-wire    entry_proc_U0_ap_idle;
-wire    entry_proc_U0_ap_ready;
-wire    entry_proc_U0_start_out;
-wire    entry_proc_U0_start_write;
-wire   [31:0] entry_proc_U0_shift_c_din;
-wire    entry_proc_U0_shift_c_write;
 wire    load_frame_16_2160_3840_1_U0_ap_start;
 wire    load_frame_16_2160_3840_1_U0_ap_done;
 wire    load_frame_16_2160_3840_1_U0_ap_continue;
@@ -120,10 +112,6 @@ wire    load_frame_16_2160_3840_1_U0_ap_ready;
 wire    load_frame_16_2160_3840_1_U0_video_in_TREADY;
 wire   [23:0] load_frame_16_2160_3840_1_U0_src_data_din;
 wire    load_frame_16_2160_3840_1_U0_src_data_write;
-wire   [31:0] load_frame_16_2160_3840_1_U0_rows_c3_din;
-wire    load_frame_16_2160_3840_1_U0_rows_c3_write;
-wire   [31:0] load_frame_16_2160_3840_1_U0_cols_c4_din;
-wire    load_frame_16_2160_3840_1_U0_cols_c4_write;
 wire    filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_start;
 wire    filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_done;
 wire    filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_continue;
@@ -131,12 +119,11 @@ wire    filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_idle;
 wire    filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_ready;
 wire    filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_start_out;
 wire    filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_start_write;
-wire    filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_rows_read;
-wire    filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_cols_read;
 wire    filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_src_data_read;
 wire   [23:0] filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_dst_data_din;
 wire    filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_dst_data_write;
-wire    filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_shift_read;
+wire   [4:0] filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_coeff_address0;
+wire    filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_coeff_ce0;
 wire   [31:0] filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_rows_c_din;
 wire    filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_rows_c_write;
 wire   [31:0] filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_cols_c_din;
@@ -157,26 +144,11 @@ wire   [0:0] store_frame_16_2160_3840_1_U0_video_out_TUSER;
 wire   [0:0] store_frame_16_2160_3840_1_U0_video_out_TLAST;
 wire   [0:0] store_frame_16_2160_3840_1_U0_video_out_TID;
 wire   [0:0] store_frame_16_2160_3840_1_U0_video_out_TDEST;
-wire    shift_c_full_n;
-wire   [31:0] shift_c_dout;
-wire    shift_c_empty_n;
-wire   [2:0] shift_c_num_data_valid;
-wire   [2:0] shift_c_fifo_cap;
 wire    src_data_full_n;
 wire   [23:0] src_data_dout;
 wire    src_data_empty_n;
 wire   [2:0] src_data_num_data_valid;
 wire   [2:0] src_data_fifo_cap;
-wire    rows_c3_full_n;
-wire   [31:0] rows_c3_dout;
-wire    rows_c3_empty_n;
-wire   [2:0] rows_c3_num_data_valid;
-wire   [2:0] rows_c3_fifo_cap;
-wire    cols_c4_full_n;
-wire   [31:0] cols_c4_dout;
-wire    cols_c4_empty_n;
-wire   [2:0] cols_c4_num_data_valid;
-wire   [2:0] cols_c4_fifo_cap;
 wire    dst_data_full_n;
 wire   [23:0] dst_data_dout;
 wire    dst_data_empty_n;
@@ -193,14 +165,10 @@ wire    cols_c_empty_n;
 wire   [2:0] cols_c_num_data_valid;
 wire   [2:0] cols_c_fifo_cap;
 wire    ap_sync_ready;
-reg    ap_sync_reg_entry_proc_U0_ap_ready;
-wire    ap_sync_entry_proc_U0_ap_ready;
 reg    ap_sync_reg_load_frame_16_2160_3840_1_U0_ap_ready;
 wire    ap_sync_load_frame_16_2160_3840_1_U0_ap_ready;
-wire   [0:0] start_for_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_din;
-wire    start_for_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_full_n;
-wire   [0:0] start_for_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_dout;
-wire    start_for_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_empty_n;
+reg    ap_sync_reg_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_ready;
+wire    ap_sync_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_ready;
 wire   [0:0] start_for_store_frame_16_2160_3840_1_U0_din;
 wire    start_for_store_frame_16_2160_3840_1_U0_full_n;
 wire   [0:0] start_for_store_frame_16_2160_3840_1_U0_dout;
@@ -209,8 +177,8 @@ wire    ap_ce_reg;
 
 // power-on initialization
 initial begin
-#0 ap_sync_reg_entry_proc_U0_ap_ready = 1'b0;
 #0 ap_sync_reg_load_frame_16_2160_3840_1_U0_ap_ready = 1'b0;
+#0 ap_sync_reg_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_ready = 1'b0;
 end
 
 conv2d_control_s_axi #(
@@ -240,30 +208,14 @@ control_s_axi_U(
     .rows(rows),
     .cols(cols),
     .shift(shift),
+    .coeff_address0(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_coeff_address0),
+    .coeff_ce0(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_coeff_ce0),
+    .coeff_q0(coeff_q0),
     .ap_start(ap_start),
     .interrupt(interrupt),
     .ap_ready(ap_ready),
     .ap_done(ap_done),
     .ap_idle(ap_idle)
-);
-
-conv2d_entry_proc entry_proc_U0(
-    .ap_clk(ap_clk),
-    .ap_rst(ap_rst_n_inv),
-    .ap_start(entry_proc_U0_ap_start),
-    .start_full_n(start_for_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_full_n),
-    .ap_done(entry_proc_U0_ap_done),
-    .ap_continue(entry_proc_U0_ap_continue),
-    .ap_idle(entry_proc_U0_ap_idle),
-    .ap_ready(entry_proc_U0_ap_ready),
-    .start_out(entry_proc_U0_start_out),
-    .start_write(entry_proc_U0_start_write),
-    .shift(shift),
-    .shift_c_din(entry_proc_U0_shift_c_din),
-    .shift_c_full_n(shift_c_full_n),
-    .shift_c_write(entry_proc_U0_shift_c_write),
-    .shift_c_num_data_valid(shift_c_num_data_valid),
-    .shift_c_fifo_cap(shift_c_fifo_cap)
 );
 
 conv2d_load_frame_16_2160_3840_1_s load_frame_16_2160_3840_1_U0(
@@ -289,17 +241,7 @@ conv2d_load_frame_16_2160_3840_1_s load_frame_16_2160_3840_1_U0(
     .src_data_full_n(src_data_full_n),
     .src_data_write(load_frame_16_2160_3840_1_U0_src_data_write),
     .src_data_num_data_valid(src_data_num_data_valid),
-    .src_data_fifo_cap(src_data_fifo_cap),
-    .rows_c3_din(load_frame_16_2160_3840_1_U0_rows_c3_din),
-    .rows_c3_full_n(rows_c3_full_n),
-    .rows_c3_write(load_frame_16_2160_3840_1_U0_rows_c3_write),
-    .rows_c3_num_data_valid(rows_c3_num_data_valid),
-    .rows_c3_fifo_cap(rows_c3_fifo_cap),
-    .cols_c4_din(load_frame_16_2160_3840_1_U0_cols_c4_din),
-    .cols_c4_full_n(cols_c4_full_n),
-    .cols_c4_write(load_frame_16_2160_3840_1_U0_cols_c4_write),
-    .cols_c4_num_data_valid(cols_c4_num_data_valid),
-    .cols_c4_fifo_cap(cols_c4_fifo_cap)
+    .src_data_fifo_cap(src_data_fifo_cap)
 );
 
 conv2d_filter2D_1_5_5_16_16_2160_3840_1_2_2_s filter2D_1_5_5_16_16_2160_3840_1_2_2_U0(
@@ -313,16 +255,8 @@ conv2d_filter2D_1_5_5_16_16_2160_3840_1_2_2_s filter2D_1_5_5_16_16_2160_3840_1_2
     .ap_ready(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_ready),
     .start_out(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_start_out),
     .start_write(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_start_write),
-    .rows_dout(rows_c3_dout),
-    .rows_empty_n(rows_c3_empty_n),
-    .rows_read(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_rows_read),
-    .rows_num_data_valid(rows_c3_num_data_valid),
-    .rows_fifo_cap(rows_c3_fifo_cap),
-    .cols_dout(cols_c4_dout),
-    .cols_empty_n(cols_c4_empty_n),
-    .cols_read(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_cols_read),
-    .cols_num_data_valid(cols_c4_num_data_valid),
-    .cols_fifo_cap(cols_c4_fifo_cap),
+    .rows(rows),
+    .cols(cols),
     .src_data_dout(src_data_dout),
     .src_data_empty_n(src_data_empty_n),
     .src_data_read(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_src_data_read),
@@ -333,11 +267,10 @@ conv2d_filter2D_1_5_5_16_16_2160_3840_1_2_2_s filter2D_1_5_5_16_16_2160_3840_1_2
     .dst_data_write(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_dst_data_write),
     .dst_data_num_data_valid(dst_data_num_data_valid),
     .dst_data_fifo_cap(dst_data_fifo_cap),
-    .shift_dout(shift_c_dout),
-    .shift_empty_n(shift_c_empty_n),
-    .shift_read(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_shift_read),
-    .shift_num_data_valid(shift_c_num_data_valid),
-    .shift_fifo_cap(shift_c_fifo_cap),
+    .coeff_address0(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_coeff_address0),
+    .coeff_ce0(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_coeff_ce0),
+    .coeff_q0(coeff_q0),
+    .shift(shift),
     .rows_c_din(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_rows_c_din),
     .rows_c_full_n(rows_c_full_n),
     .rows_c_write(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_rows_c_write),
@@ -384,21 +317,6 @@ conv2d_store_frame_16_2160_3840_1_s store_frame_16_2160_3840_1_U0(
     .video_out_TDEST(store_frame_16_2160_3840_1_U0_video_out_TDEST)
 );
 
-conv2d_fifo_w32_d3_S shift_c_U(
-    .clk(ap_clk),
-    .reset(ap_rst_n_inv),
-    .if_read_ce(1'b1),
-    .if_write_ce(1'b1),
-    .if_din(entry_proc_U0_shift_c_din),
-    .if_full_n(shift_c_full_n),
-    .if_write(entry_proc_U0_shift_c_write),
-    .if_dout(shift_c_dout),
-    .if_empty_n(shift_c_empty_n),
-    .if_read(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_shift_read),
-    .if_num_data_valid(shift_c_num_data_valid),
-    .if_fifo_cap(shift_c_fifo_cap)
-);
-
 conv2d_fifo_w24_d2_S src_data_U(
     .clk(ap_clk),
     .reset(ap_rst_n_inv),
@@ -412,36 +330,6 @@ conv2d_fifo_w24_d2_S src_data_U(
     .if_read(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_src_data_read),
     .if_num_data_valid(src_data_num_data_valid),
     .if_fifo_cap(src_data_fifo_cap)
-);
-
-conv2d_fifo_w32_d2_S rows_c3_U(
-    .clk(ap_clk),
-    .reset(ap_rst_n_inv),
-    .if_read_ce(1'b1),
-    .if_write_ce(1'b1),
-    .if_din(load_frame_16_2160_3840_1_U0_rows_c3_din),
-    .if_full_n(rows_c3_full_n),
-    .if_write(load_frame_16_2160_3840_1_U0_rows_c3_write),
-    .if_dout(rows_c3_dout),
-    .if_empty_n(rows_c3_empty_n),
-    .if_read(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_rows_read),
-    .if_num_data_valid(rows_c3_num_data_valid),
-    .if_fifo_cap(rows_c3_fifo_cap)
-);
-
-conv2d_fifo_w32_d2_S cols_c4_U(
-    .clk(ap_clk),
-    .reset(ap_rst_n_inv),
-    .if_read_ce(1'b1),
-    .if_write_ce(1'b1),
-    .if_din(load_frame_16_2160_3840_1_U0_cols_c4_din),
-    .if_full_n(cols_c4_full_n),
-    .if_write(load_frame_16_2160_3840_1_U0_cols_c4_write),
-    .if_dout(cols_c4_dout),
-    .if_empty_n(cols_c4_empty_n),
-    .if_read(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_cols_read),
-    .if_num_data_valid(cols_c4_num_data_valid),
-    .if_fifo_cap(cols_c4_fifo_cap)
 );
 
 conv2d_fifo_w24_d2_S dst_data_U(
@@ -489,19 +377,6 @@ conv2d_fifo_w32_d2_S cols_c_U(
     .if_fifo_cap(cols_c_fifo_cap)
 );
 
-conv2d_start_for_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0 start_for_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_U(
-    .clk(ap_clk),
-    .reset(ap_rst_n_inv),
-    .if_read_ce(1'b1),
-    .if_write_ce(1'b1),
-    .if_din(start_for_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_din),
-    .if_full_n(start_for_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_full_n),
-    .if_write(entry_proc_U0_start_write),
-    .if_dout(start_for_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_dout),
-    .if_empty_n(start_for_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_empty_n),
-    .if_read(filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_ready)
-);
-
 conv2d_start_for_store_frame_16_2160_3840_1_U0 start_for_store_frame_16_2160_3840_1_U0_U(
     .clk(ap_clk),
     .reset(ap_rst_n_inv),
@@ -517,12 +392,12 @@ conv2d_start_for_store_frame_16_2160_3840_1_U0 start_for_store_frame_16_2160_384
 
 always @ (posedge ap_clk) begin
     if (ap_rst_n_inv == 1'b1) begin
-        ap_sync_reg_entry_proc_U0_ap_ready <= 1'b0;
+        ap_sync_reg_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_ready <= 1'b0;
     end else begin
         if (((ap_sync_ready & ap_start) == 1'b1)) begin
-            ap_sync_reg_entry_proc_U0_ap_ready <= 1'b0;
+            ap_sync_reg_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_ready <= 1'b0;
         end else begin
-            ap_sync_reg_entry_proc_U0_ap_ready <= ap_sync_entry_proc_U0_ap_ready;
+            ap_sync_reg_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_ready <= ap_sync_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_ready;
         end
     end
 end
@@ -541,7 +416,7 @@ end
 
 assign ap_done = store_frame_16_2160_3840_1_U0_ap_done;
 
-assign ap_idle = (store_frame_16_2160_3840_1_U0_ap_idle & load_frame_16_2160_3840_1_U0_ap_idle & filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_idle & entry_proc_U0_ap_idle);
+assign ap_idle = (store_frame_16_2160_3840_1_U0_ap_idle & load_frame_16_2160_3840_1_U0_ap_idle & filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_idle);
 
 assign ap_ready = ap_sync_ready;
 
@@ -549,25 +424,19 @@ always @ (*) begin
     ap_rst_n_inv = ~ap_rst_n;
 end
 
-assign ap_sync_entry_proc_U0_ap_ready = (entry_proc_U0_ap_ready | ap_sync_reg_entry_proc_U0_ap_ready);
+assign ap_sync_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_ready = (filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_ready | ap_sync_reg_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_ready);
 
 assign ap_sync_load_frame_16_2160_3840_1_U0_ap_ready = (load_frame_16_2160_3840_1_U0_ap_ready | ap_sync_reg_load_frame_16_2160_3840_1_U0_ap_ready);
 
-assign ap_sync_ready = (ap_sync_load_frame_16_2160_3840_1_U0_ap_ready & ap_sync_entry_proc_U0_ap_ready);
-
-assign entry_proc_U0_ap_continue = 1'b1;
-
-assign entry_proc_U0_ap_start = ((ap_sync_reg_entry_proc_U0_ap_ready ^ 1'b1) & ap_start);
+assign ap_sync_ready = (ap_sync_load_frame_16_2160_3840_1_U0_ap_ready & ap_sync_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_ready);
 
 assign filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_continue = 1'b1;
 
-assign filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_start = start_for_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_empty_n;
+assign filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_start = ((ap_sync_reg_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_ap_ready ^ 1'b1) & ap_start);
 
 assign load_frame_16_2160_3840_1_U0_ap_continue = 1'b1;
 
 assign load_frame_16_2160_3840_1_U0_ap_start = ((ap_sync_reg_load_frame_16_2160_3840_1_U0_ap_ready ^ 1'b1) & ap_start);
-
-assign start_for_filter2D_1_5_5_16_16_2160_3840_1_2_2_U0_din = 1'b1;
 
 assign start_for_store_frame_16_2160_3840_1_U0_din = 1'b1;
 

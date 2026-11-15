@@ -1,22 +1,22 @@
 {
   "schema": "xilinx.com:schema:json_instance:1.0",
   "ip_inst": {
-    "xci_name": "top_conv2d_0_1",
+    "xci_name": "top_conv2d_0_2",
     "cell_name": "conv2d_0",
-    "component_reference": "user:hls:conv2d:2.0",
-    "ip_revision": "2114874993",
-    "gen_directory": "../../../../../../accel.gen/sources_1/bd/top/ip/top_conv2d_0_1",
+    "component_reference": "user:hls:conv2d:3.0",
+    "ip_revision": "2114875183",
+    "gen_directory": "../../../../../../accel.gen/sources_1/bd/top/ip/top_conv2d_0_2",
     "parameters": {
       "component_parameters": {
-        "Component_Name": [ { "value": "top_conv2d_0_1", "resolve_type": "user", "usage": "all" } ],
+        "Component_Name": [ { "value": "top_conv2d_0_2", "resolve_type": "user", "usage": "all" } ],
         "clk_period": [ { "value": "4", "enabled": false, "usage": "all" } ],
         "machine": [ { "value": "64", "enabled": false, "usage": "all" } ],
         "combinational": [ { "value": "0", "enabled": false, "usage": "all" } ],
-        "latency": [ { "value": "233", "enabled": false, "usage": "all" } ],
-        "II": [ { "value": "233 ~ 8376681", "enabled": false, "usage": "all" } ]
+        "latency": [ { "value": "363", "enabled": false, "usage": "all" } ],
+        "II": [ { "value": "364 ~ 8398402", "enabled": false, "usage": "all" } ]
       },
       "model_parameters": {
-        "C_S_AXI_CONTROL_ADDR_WIDTH": [ { "value": "6", "resolve_type": "generated", "format": "long", "usage": "all" } ],
+        "C_S_AXI_CONTROL_ADDR_WIDTH": [ { "value": "7", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_S_AXI_CONTROL_DATA_WIDTH": [ { "value": "32", "format": "long", "usage": "all" } ]
       },
       "project_parameters": {
@@ -34,9 +34,9 @@
       },
       "runtime_parameters": {
         "IPCONTEXT": [ { "value": "IP_Integrator" } ],
-        "IPREVISION": [ { "value": "2114874993" } ],
+        "IPREVISION": [ { "value": "2114875183" } ],
         "MANAGED": [ { "value": "TRUE" } ],
-        "OUTPUTDIR": [ { "value": "../../../../../../accel.gen/sources_1/bd/top/ip/top_conv2d_0_1" } ],
+        "OUTPUTDIR": [ { "value": "../../../../../../accel.gen/sources_1/bd/top/ip/top_conv2d_0_2" } ],
         "SELECTEDSIMMODEL": [ { "value": "" } ],
         "SHAREDDIR": [ { "value": "../../../../../../accel.srcs/sources_1/bd/top/ipshared" } ],
         "SWVERSION": [ { "value": "2024.2" } ],
@@ -45,10 +45,10 @@
     },
     "boundary": {
       "ports": {
-        "s_axi_control_ARADDR": [ { "direction": "in", "size_left": "5", "size_right": "0" } ],
+        "s_axi_control_ARADDR": [ { "direction": "in", "size_left": "6", "size_right": "0" } ],
         "s_axi_control_ARREADY": [ { "direction": "out" } ],
         "s_axi_control_ARVALID": [ { "direction": "in" } ],
-        "s_axi_control_AWADDR": [ { "direction": "in", "size_left": "5", "size_right": "0" } ],
+        "s_axi_control_AWADDR": [ { "direction": "in", "size_left": "6", "size_right": "0" } ],
         "s_axi_control_AWREADY": [ { "direction": "out" } ],
         "s_axi_control_AWVALID": [ { "direction": "in" } ],
         "s_axi_control_BREADY": [ { "direction": "in" } ],
@@ -91,7 +91,7 @@
           "mode": "slave",
           "memory_map_ref": "s_axi_control",
           "parameters": {
-            "ADDR_WIDTH": [ { "value": "6", "value_src": "constant", "value_permission": "bd_and_user", "usage": "all" } ],
+            "ADDR_WIDTH": [ { "value": "7", "value_src": "constant", "value_permission": "bd_and_user", "usage": "all" } ],
             "DATA_WIDTH": [ { "value": "32", "value_src": "constant", "value_permission": "bd_and_user", "usage": "all" } ],
             "PROTOCOL": [ { "value": "AXI4LITE", "value_src": "constant", "value_permission": "bd_and_user", "usage": "all" } ],
             "READ_WRITE_MODE": [ { "value": "READ_WRITE", "value_src": "constant", "value_permission": "bd_and_user", "usage": "all" } ],
@@ -450,6 +450,14 @@
                       "access": "write-only"
                     }
                   }
+                },
+                "Memory_coeff": {
+                  "address_offset": "64",
+                  "size": 64,
+                  "display_name": "Memory_coeff",
+                  "description": "Memory coeff",
+                  "access": "read-write",
+                  "reset_value": "0"
                 }
               }
             }

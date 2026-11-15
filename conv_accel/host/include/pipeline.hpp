@@ -4,6 +4,7 @@
 
 #include "axidma.hpp"
 #include "conv2d.hpp"
+#include "filters.hpp"
 #include "userbar.hpp"
 #include "xdma.hpp"
 
@@ -41,15 +42,13 @@ private:
     Timing t_;
 };
 
-// M1: frame -> DDR3 -> AXI DMA -> conv2d (5x5) -> AXI DMA -> DDR3 -> frame.
+// M2: frame -> DDR3 -> AXI DMA -> conv2d (5x5, coefficients from the host) ->
+// AXI DMA -> DDR3 -> frame.
 // The on-card stream is 32 bits/pixel (RGBX), so a BGR8 frame is widened to
 // BGRA on the way in and narrowed back on the way out.
 class AxidmaConv2d final : public IVideoPipeline {
 public:
-    // must match the HLS kernel (sum-256 5x5 Gaussian, shift 8)
-    static constexpr int kShift = 8;
-
-    AxidmaConv2d(Xdma& xdma, UserBar& bar,
+    AxidmaConv2d(Xdma& xdma, UserBar& bar, const Filter& filter = kFilters[0],
                  uint64_t in_addr = 0x10000000ull,
                  uint64_t out_addr = 0x20000000ull);
 
@@ -57,11 +56,16 @@ public:
     const Timing& timing() const override { return t_; }
     const char* name() const override { return "axidma-conv2d-5x5"; }
 
+    // Runtime filter selection; takes effect from the next frame.
+    void set_filter(const Filter& f) { filter_ = &f; }
+    const Filter& filter() const { return *filter_; }
+
 private:
     Xdma& xdma_;
     UserBar& bar_;
     Axidma dma_;
     Conv2d conv_;
+    const Filter* filter_;
     uint64_t in_;
     uint64_t out_;
     Timing t_;

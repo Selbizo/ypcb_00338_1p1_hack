@@ -19,6 +19,7 @@
 
 #include "pipeline.hpp"
 #include "axidma.hpp"
+#include "filters.hpp"
 #include "userbar.hpp"
 #include "xdma.hpp"
 
@@ -34,6 +35,7 @@ struct Options {
     bool verify = false;
     bool vdma = false;
     bool compare = false;
+    std::string filter = "gauss";
     std::string out = ".";
 };
 
@@ -50,6 +52,7 @@ void usage(const char* argv0) {
         "  --dma          run the frame through DDR3 -> AXI DMA -> DDR3 (M0)\n"
         "  --vdma         alias for --dma (old name)\n"
         "  --compare      show source | FPGA result | amplified difference\n"
+        "  --filter NAME  convolution preset: gauss (default), sharp, edge, box, raw\n"
         "  --out DIR      directory for --headless output\n",
         argv0);
 }
@@ -74,6 +77,7 @@ Options parse(int argc, char** argv) {
         else if (a == "--verify") o.verify = true;
         else if (a == "--dma" || a == "--vdma") o.vdma = true;
         else if (a == "--compare") o.compare = true;
+        else if (a == "--filter") o.filter = next("--filter");
         else if (a == "--out") o.out = next("--out");
         else if (a == "-h" || a == "--help") { usage(argv[0]); std::exit(0); }
         else { std::fprintf(stderr, "unknown option: %s\n", a.c_str()); usage(argv[0]); std::exit(2); }
@@ -148,9 +152,8 @@ cv::Mat compare_view(const cv::Mat& src, const cv::Mat& out, const std::string& 
 // accumulation, truncating >>8, saturate to [0,255].
 // Border handling: xf::cv::filter2D behaves as zero padding in Vitis Vision
 // 2024.2 (verified in C simulation), not replicate as the enum suggests.
-cv::Mat conv_reference(const cv::Mat& bgr) {
-    static const int K[25] = {1, 4, 6, 4, 1, 4, 16, 24, 16, 4, 6, 24, 36, 24, 6,
-                              4, 16, 24, 16, 4, 1, 4, 6, 4, 1};
+cv::Mat conv_reference(const cv::Mat& bgr, const accel::Filter& f) {
+    const int* K = reinterpret_cast<const int*>(f.k);
     cv::Mat ref(bgr.size(), CV_8UC3);
     const int rows = bgr.rows, cols = bgr.cols;
     for (int y = 0; y < rows; ++y) {
@@ -168,7 +171,7 @@ cv::Mat conv_reference(const cv::Mat& bgr) {
                         sum += K[ky * 5 + kx] * static_cast<int>(row[xx * 3 + c]);
                     }
                 }
-                int v = sum >> accel::AxidmaConv2d::kShift;
+                int v = sum >> f.shift;
                 o[x * 3 + c] = static_cast<uchar>(std::min(std::max(v, 0), 255));
             }
         }
@@ -202,14 +205,24 @@ int main(int argc, char** argv) {
     accel::Xdma xdma;
     std::unique_ptr<accel::UserBar> bar;
     std::unique_ptr<accel::IVideoPipeline> pipe;
+    accel::AxidmaConv2d* conv_pipe = nullptr;
     if (opt.vdma) {
+        const accel::Filter* f = accel::find_filter(opt.filter.c_str());
+        if (!f) {
+            std::fprintf(stderr, "unknown filter: %s\n", opt.filter.c_str());
+            return 2;
+        }
         bar = std::make_unique<accel::UserBar>();
-        pipe = std::make_unique<accel::AxidmaConv2d>(xdma, *bar);
+        auto p = std::make_unique<accel::AxidmaConv2d>(xdma, *bar, *f);
+        conv_pipe = p.get();
+        pipe = std::move(p);
     } else {
         pipe = std::make_unique<accel::DdrLoopback>(xdma);
     }
 
-    std::printf("pipeline: %s\n", pipe->name());
+    std::printf("pipeline: %s", pipe->name());
+    if (conv_pipe) std::printf("  filter: %s (%s)", conv_pipe->filter().name, conv_pipe->filter().title);
+    std::printf("\n");
     if (opt.synthetic) std::printf("source: synthetic %dx%d\n", opt.width, opt.height);
     else std::printf("source: camera %d, %dx%d\n", opt.camera,
                      static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH)),
@@ -218,6 +231,7 @@ int main(int argc, char** argv) {
     const bool headless = opt.headless || std::getenv("DISPLAY") == nullptr;
     if (headless) std::printf("display: off (headless)\n");
 
+    bool verified = false;
     int frame_no = 0;
     double fps_t0 = now_s();
     const double t_start = fps_t0;
@@ -242,11 +256,11 @@ int main(int argc, char** argv) {
         sum_up += pipe->timing().upload_ms;
         sum_down += pipe->timing().download_ms;
 
-        static bool verified = false;
         if (opt.verify && !verified) {
-            const cv::Mat ref = conv_reference(frame);
+            const cv::Mat ref = conv_reference(frame, conv_pipe->filter());
             const double d = cv::norm(out, ref, cv::NORM_INF);
-            std::printf("reference: max|fpga - software conv2d| = %g\n", d);
+            std::printf("reference: max|fpga - software| = %g  (filter %s)\n", d,
+                        conv_pipe->filter().name);
             verified = true;
         }
         const double maxdiff = opt.compare ? cv::norm(out, frame, cv::NORM_INF) : 0.0;
@@ -280,16 +294,28 @@ int main(int argc, char** argv) {
                 std::printf("saved %s\n", path.c_str());
                 saved = true;
             }
-        } else if (opt.compare) {
-            const auto& tm = pipe->timing();
-            const std::string st = cv::format("%dx%d  up %.2f / dma %.2f / down %.2f ms",
-                                              out.cols, out.rows, tm.upload_ms, tm.process_ms,
-                                              tm.download_ms);
-            cv::imshow("conv_accel", compare_view(frame, out, st, maxdiff, opt.verify));
-            if (cv::waitKey(1) == 27) break;
         } else {
-            cv::imshow("conv_accel", out);
-            if (cv::waitKey(1) == 27) break;
+            cv::Mat view = out;
+            if (opt.compare) {
+                const auto& tm = pipe->timing();
+                const std::string st =
+                    cv::format("%dx%d  %s  up %.2f / dma %.2f / down %.2f ms", out.cols, out.rows,
+                               conv_pipe ? conv_pipe->filter().title : "", tm.upload_ms,
+                               tm.process_ms, tm.download_ms);
+                view = compare_view(frame, out, st, maxdiff, opt.verify);
+            }
+            cv::imshow("conv_accel", view);
+            const int key = cv::waitKey(1);
+            if (key == 27) break;
+            if (conv_pipe && key >= '1' && key < '1' + accel::kFilterCount) {
+                const accel::Filter& nf = accel::kFilters[key - '1'];
+                if (&nf != &conv_pipe->filter()) {
+                    conv_pipe->set_filter(nf);
+                    verified = false;
+                    std::printf("filter: %s (%s)\n", nf.name, nf.title);
+                    std::fflush(stdout);
+                }
+            }
         }
 
         if (opt.frames > 0 && frame_no >= opt.frames) break;

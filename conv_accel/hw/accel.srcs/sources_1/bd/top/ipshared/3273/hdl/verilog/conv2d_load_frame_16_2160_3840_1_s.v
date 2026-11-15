@@ -29,17 +29,7 @@ module conv2d_load_frame_16_2160_3840_1_s (
         src_data_full_n,
         src_data_write,
         src_data_num_data_valid,
-        src_data_fifo_cap,
-        rows_c3_din,
-        rows_c3_full_n,
-        rows_c3_write,
-        rows_c3_num_data_valid,
-        rows_c3_fifo_cap,
-        cols_c4_din,
-        cols_c4_full_n,
-        cols_c4_write,
-        cols_c4_num_data_valid,
-        cols_c4_fifo_cap
+        src_data_fifo_cap
 );
 
 parameter    ap_ST_fsm_state1 = 4'd1;
@@ -70,47 +60,33 @@ input   src_data_full_n;
 output   src_data_write;
 input  [2:0] src_data_num_data_valid;
 input  [2:0] src_data_fifo_cap;
-output  [31:0] rows_c3_din;
-input   rows_c3_full_n;
-output   rows_c3_write;
-input  [2:0] rows_c3_num_data_valid;
-input  [2:0] rows_c3_fifo_cap;
-output  [31:0] cols_c4_din;
-input   cols_c4_full_n;
-output   cols_c4_write;
-input  [2:0] cols_c4_num_data_valid;
-input  [2:0] cols_c4_fifo_cap;
 
 reg ap_done;
 reg ap_idle;
 reg ap_ready;
-reg rows_c3_write;
-reg cols_c4_write;
 
 reg    ap_done_reg;
 (* fsm_encoding = "none" *) reg   [3:0] ap_CS_fsm;
 wire    ap_CS_fsm_state1;
-reg    rows_c3_blk_n;
-reg    cols_c4_blk_n;
 reg    ap_block_state1;
-wire   [22:0] grp_fu_127_p2;
-reg   [22:0] bound_reg_169;
+wire   [22:0] grp_fu_93_p2;
+reg   [22:0] bound_reg_109;
 wire    ap_CS_fsm_state2;
-wire    grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_start;
-wire    grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_done;
-wire    grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_idle;
-wire    grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_ready;
-wire   [23:0] grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_src_data_din;
-wire    grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_src_data_write;
-wire    grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_video_in_TREADY;
-reg    grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_start_reg;
+wire    grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_start;
+wire    grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_done;
+wire    grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_idle;
+wire    grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_ready;
+wire   [23:0] grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_src_data_din;
+wire    grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_src_data_write;
+wire    grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_video_in_TREADY;
+reg    grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_start_reg;
 wire    ap_CS_fsm_state3;
 wire    ap_CS_fsm_state4;
-wire   [11:0] empty_60_fu_115_p1;
-wire   [11:0] empty_fu_111_p1;
-wire   [11:0] grp_fu_127_p0;
-wire   [11:0] grp_fu_127_p1;
-reg    grp_fu_127_ce;
+wire   [11:0] empty_47_fu_81_p1;
+wire   [11:0] empty_fu_77_p1;
+wire   [11:0] grp_fu_93_p0;
+wire   [11:0] grp_fu_93_p1;
+reg    grp_fu_93_ce;
 reg   [3:0] ap_NS_fsm;
 reg    ap_ST_fsm_state1_blk;
 wire    ap_ST_fsm_state2_blk;
@@ -145,33 +121,33 @@ wire    regslice_both_video_in_V_dest_V_U_apdone_blk;
 wire   [0:0] video_in_TDEST_int_regslice;
 wire    regslice_both_video_in_V_dest_V_U_vld_out;
 wire    regslice_both_video_in_V_dest_V_U_ack_in;
-wire   [22:0] grp_fu_127_p00;
-wire   [22:0] grp_fu_127_p10;
+wire   [22:0] grp_fu_93_p00;
+wire   [22:0] grp_fu_93_p10;
 wire    ap_ce_reg;
 
 // power-on initialization
 initial begin
 #0 ap_done_reg = 1'b0;
 #0 ap_CS_fsm = 4'd1;
-#0 grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_start_reg = 1'b0;
+#0 grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_start_reg = 1'b0;
 end
 
-conv2d_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90(
+conv2d_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56(
     .ap_clk(ap_clk),
     .ap_rst(ap_rst),
-    .ap_start(grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_start),
-    .ap_done(grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_done),
-    .ap_idle(grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_idle),
-    .ap_ready(grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_ready),
+    .ap_start(grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_start),
+    .ap_done(grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_done),
+    .ap_idle(grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_idle),
+    .ap_ready(grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_ready),
     .video_in_TVALID(video_in_TVALID_int_regslice),
-    .src_data_din(grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_src_data_din),
+    .src_data_din(grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_src_data_din),
     .src_data_full_n(src_data_full_n),
-    .src_data_write(grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_src_data_write),
+    .src_data_write(grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_src_data_write),
     .src_data_num_data_valid(3'd0),
     .src_data_fifo_cap(3'd0),
-    .bound(bound_reg_169),
+    .bound(bound_reg_109),
     .video_in_TDATA(video_in_TDATA_int_regslice),
-    .video_in_TREADY(grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_video_in_TREADY),
+    .video_in_TREADY(grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_video_in_TREADY),
     .video_in_TKEEP(video_in_TKEEP_int_regslice),
     .video_in_TSTRB(video_in_TSTRB_int_regslice),
     .video_in_TUSER(video_in_TUSER_int_regslice),
@@ -186,13 +162,13 @@ conv2d_mul_12ns_12ns_23_2_1 #(
     .din0_WIDTH( 12 ),
     .din1_WIDTH( 12 ),
     .dout_WIDTH( 23 ))
-mul_12ns_12ns_23_2_1_U12(
+mul_12ns_12ns_23_2_1_U10(
     .clk(ap_clk),
     .reset(ap_rst),
-    .din0(grp_fu_127_p0),
-    .din1(grp_fu_127_p1),
-    .ce(grp_fu_127_ce),
-    .dout(grp_fu_127_p2)
+    .din0(grp_fu_93_p0),
+    .din1(grp_fu_93_p1),
+    .ce(grp_fu_93_ce),
+    .dout(grp_fu_93_p2)
 );
 
 conv2d_regslice_both #(
@@ -307,7 +283,7 @@ always @ (posedge ap_clk) begin
     end else begin
         if ((ap_continue == 1'b1)) begin
             ap_done_reg <= 1'b0;
-        end else if (((grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_done == 1'b1) & (1'b1 == ap_CS_fsm_state4))) begin
+        end else if (((grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_done == 1'b1) & (1'b1 == ap_CS_fsm_state4))) begin
             ap_done_reg <= 1'b1;
         end
     end
@@ -315,19 +291,19 @@ end
 
 always @ (posedge ap_clk) begin
     if (ap_rst == 1'b1) begin
-        grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_start_reg <= 1'b0;
+        grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_start_reg <= 1'b0;
     end else begin
         if ((1'b1 == ap_CS_fsm_state3)) begin
-            grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_start_reg <= 1'b1;
-        end else if ((grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_ready == 1'b1)) begin
-            grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_start_reg <= 1'b0;
+            grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_start_reg <= 1'b1;
+        end else if ((grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_ready == 1'b1)) begin
+            grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_start_reg <= 1'b0;
         end
     end
 end
 
 always @ (posedge ap_clk) begin
     if ((1'b1 == ap_CS_fsm_state2)) begin
-        bound_reg_169 <= grp_fu_127_p2;
+        bound_reg_109 <= grp_fu_93_p2;
     end
 end
 
@@ -344,7 +320,7 @@ assign ap_ST_fsm_state2_blk = 1'b0;
 assign ap_ST_fsm_state3_blk = 1'b0;
 
 always @ (*) begin
-    if ((grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_done == 1'b0)) begin
+    if ((grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_done == 1'b0)) begin
         ap_ST_fsm_state4_blk = 1'b1;
     end else begin
         ap_ST_fsm_state4_blk = 1'b0;
@@ -352,7 +328,7 @@ always @ (*) begin
 end
 
 always @ (*) begin
-    if (((grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_done == 1'b1) & (1'b1 == ap_CS_fsm_state4))) begin
+    if (((grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_done == 1'b1) & (1'b1 == ap_CS_fsm_state4))) begin
         ap_done = 1'b1;
     end else begin
         ap_done = ap_done_reg;
@@ -368,7 +344,7 @@ always @ (*) begin
 end
 
 always @ (*) begin
-    if (((grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_done == 1'b1) & (1'b1 == ap_CS_fsm_state4))) begin
+    if (((grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_done == 1'b1) & (1'b1 == ap_CS_fsm_state4))) begin
         ap_ready = 1'b1;
     end else begin
         ap_ready = 1'b0;
@@ -376,48 +352,16 @@ always @ (*) begin
 end
 
 always @ (*) begin
-    if ((~((ap_start == 1'b0) | (ap_done_reg == 1'b1)) & (1'b1 == ap_CS_fsm_state1))) begin
-        cols_c4_blk_n = cols_c4_full_n;
-    end else begin
-        cols_c4_blk_n = 1'b1;
-    end
-end
-
-always @ (*) begin
-    if (((1'b0 == ap_block_state1) & (1'b1 == ap_CS_fsm_state1))) begin
-        cols_c4_write = 1'b1;
-    end else begin
-        cols_c4_write = 1'b0;
-    end
-end
-
-always @ (*) begin
     if (((1'b1 == ap_CS_fsm_state2) | ((1'b0 == ap_block_state1) & (1'b1 == ap_CS_fsm_state1)))) begin
-        grp_fu_127_ce = 1'b1;
+        grp_fu_93_ce = 1'b1;
     end else begin
-        grp_fu_127_ce = 1'b0;
-    end
-end
-
-always @ (*) begin
-    if ((~((ap_start == 1'b0) | (ap_done_reg == 1'b1)) & (1'b1 == ap_CS_fsm_state1))) begin
-        rows_c3_blk_n = rows_c3_full_n;
-    end else begin
-        rows_c3_blk_n = 1'b1;
-    end
-end
-
-always @ (*) begin
-    if (((1'b0 == ap_block_state1) & (1'b1 == ap_CS_fsm_state1))) begin
-        rows_c3_write = 1'b1;
-    end else begin
-        rows_c3_write = 1'b0;
+        grp_fu_93_ce = 1'b0;
     end
 end
 
 always @ (*) begin
     if ((1'b1 == ap_CS_fsm_state4)) begin
-        video_in_TREADY_int_regslice = grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_video_in_TREADY;
+        video_in_TREADY_int_regslice = grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_video_in_TREADY;
     end else begin
         video_in_TREADY_int_regslice = 1'b0;
     end
@@ -439,7 +383,7 @@ always @ (*) begin
             ap_NS_fsm = ap_ST_fsm_state4;
         end
         ap_ST_fsm_state4 : begin
-            if (((grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_done == 1'b1) & (1'b1 == ap_CS_fsm_state4))) begin
+            if (((grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_done == 1'b1) & (1'b1 == ap_CS_fsm_state4))) begin
                 ap_NS_fsm = ap_ST_fsm_state1;
             end else begin
                 ap_NS_fsm = ap_ST_fsm_state4;
@@ -460,30 +404,26 @@ assign ap_CS_fsm_state3 = ap_CS_fsm[32'd2];
 assign ap_CS_fsm_state4 = ap_CS_fsm[32'd3];
 
 always @ (*) begin
-    ap_block_state1 = ((ap_start == 1'b0) | (cols_c4_full_n == 1'b0) | (rows_c3_full_n == 1'b0) | (ap_done_reg == 1'b1));
+    ap_block_state1 = ((ap_start == 1'b0) | (ap_done_reg == 1'b1));
 end
 
-assign cols_c4_din = img_cols_val;
+assign empty_47_fu_81_p1 = img_rows_val[11:0];
 
-assign empty_60_fu_115_p1 = img_rows_val[11:0];
+assign empty_fu_77_p1 = img_cols_val[11:0];
 
-assign empty_fu_111_p1 = img_cols_val[11:0];
+assign grp_fu_93_p0 = grp_fu_93_p00;
 
-assign grp_fu_127_p0 = grp_fu_127_p00;
+assign grp_fu_93_p00 = empty_47_fu_81_p1;
 
-assign grp_fu_127_p00 = empty_60_fu_115_p1;
+assign grp_fu_93_p1 = grp_fu_93_p10;
 
-assign grp_fu_127_p1 = grp_fu_127_p10;
+assign grp_fu_93_p10 = empty_fu_77_p1;
 
-assign grp_fu_127_p10 = empty_fu_111_p1;
+assign grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_start = grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_ap_start_reg;
 
-assign grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_start = grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_ap_start_reg;
+assign src_data_din = grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_src_data_din;
 
-assign rows_c3_din = img_rows_val;
-
-assign src_data_din = grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_src_data_din;
-
-assign src_data_write = grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_90_src_data_write;
+assign src_data_write = grp_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols_fu_56_src_data_write;
 
 assign video_in_TREADY = regslice_both_video_in_V_data_V_U_ack_in;
 

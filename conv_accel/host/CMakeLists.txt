@@ -17,6 +17,7 @@ add_library(accel STATIC
     src/userbar.cpp
     src/axidma.cpp
     src/conv2d.cpp
+    src/filters.cpp
 )
 target_include_directories(accel PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
