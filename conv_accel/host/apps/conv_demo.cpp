@@ -128,7 +128,7 @@ cv::Mat compare_view(const cv::Mat& src, const cv::Mat& out, const std::string& 
         cv::putText(canvas, s, {x + 8, 18}, cv::FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv::LINE_AA);
     };
     txt("source (host)", 0, {210, 210, 210});
-    txt("FPGA result (AXI DMA loopback)", pw, {210, 210, 210});
+    txt("FPGA result (conv2d 5x5)", pw, {210, 210, 210});
     if (show_diff) {
         const std::string dl =
             maxdiff == 0.0 ? "|source - result| x16  max=0" : cv::format("|source - result| x16  max=%g", maxdiff);
