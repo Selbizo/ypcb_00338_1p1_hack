@@ -6,7 +6,7 @@ namespace accel {
 // mmap of the XDMA user BAR (/dev/xdma0_user): 32-bit register access.
 class UserBar {
 public:
-    explicit UserBar(uint64_t size = 0x1000);
+    explicit UserBar(uint64_t size = 0x10000);  // whole 64K user BAR
     ~UserBar();
 
     UserBar(const UserBar&) = delete;

@@ -3,6 +3,7 @@
 #include <opencv2/core.hpp>
 
 #include "axidma.hpp"
+#include "conv2d.hpp"
 #include "userbar.hpp"
 #include "xdma.hpp"
 
@@ -40,23 +41,27 @@ private:
     Timing t_;
 };
 
-// M0: frame -> DDR3 -> AXI DMA -> (kernel) -> AXI DMA -> DDR3 -> frame.
+// M1: frame -> DDR3 -> AXI DMA -> conv2d (5x5) -> AXI DMA -> DDR3 -> frame.
 // The on-card stream is 32 bits/pixel (RGBX), so a BGR8 frame is widened to
 // BGRA on the way in and narrowed back on the way out.
-class AxidmaPassthrough final : public IVideoPipeline {
+class AxidmaConv2d final : public IVideoPipeline {
 public:
-    AxidmaPassthrough(Xdma& xdma, UserBar& bar,
-                      uint64_t in_addr = 0x10000000ull,
-                      uint64_t out_addr = 0x20000000ull);
+    // must match the HLS kernel (sum-256 5x5 Gaussian, shift 8)
+    static constexpr int kShift = 8;
+
+    AxidmaConv2d(Xdma& xdma, UserBar& bar,
+                 uint64_t in_addr = 0x10000000ull,
+                 uint64_t out_addr = 0x20000000ull);
 
     cv::Mat process(const cv::Mat& frame) override;
     const Timing& timing() const override { return t_; }
-    const char* name() const override { return "axidma-passthrough"; }
+    const char* name() const override { return "axidma-conv2d-5x5"; }
 
 private:
     Xdma& xdma_;
     UserBar& bar_;
     Axidma dma_;
+    Conv2d conv_;
     uint64_t in_;
     uint64_t out_;
     Timing t_;

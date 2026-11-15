@@ -37,10 +37,10 @@ cv::Mat DdrLoopback::process(const cv::Mat& frame) {
     return dst;
 }
 
-AxidmaPassthrough::AxidmaPassthrough(Xdma& xdma, UserBar& bar, uint64_t in_addr, uint64_t out_addr)
-    : xdma_(xdma), bar_(bar), dma_(bar, 0x0), in_(in_addr), out_(out_addr) {}
+AxidmaConv2d::AxidmaConv2d(Xdma& xdma, UserBar& bar, uint64_t in_addr, uint64_t out_addr)
+    : xdma_(xdma), bar_(bar), dma_(bar, 0x0), conv_(bar, 0x1000), in_(in_addr), out_(out_addr) {}
 
-cv::Mat AxidmaPassthrough::process(const cv::Mat& frame) {
+cv::Mat AxidmaConv2d::process(const cv::Mat& frame) {
     cv::Mat bgr = frame.isContinuous() ? frame : frame.clone();
     cv::Mat bgra;
     if (bgr.channels() == 3) {
@@ -56,11 +56,16 @@ cv::Mat AxidmaPassthrough::process(const cv::Mat& frame) {
     xdma_.write(in_, bgra.data, bytes);
     t_.upload_ms = since_ms(t0);
 
+    // start the kernel first, then the DMA; both must finish for a frame
+    conv_.configure(bgra.rows, bgra.cols, kShift);
+    conv_.start();
+
     cv::Mat out(bgra.size(), bgra.type());
     dma_.setup(in_, out_, static_cast<uint32_t>(bytes));
     t0 = std::chrono::steady_clock::now();
     dma_.start();
     if (!dma_.wait_done(3000)) throw std::runtime_error("AXI DMA transfer failed");
+    if (!conv_.wait_done(3000)) throw std::runtime_error("conv2d kernel did not finish");
     t_.process_ms = since_ms(t0);
 
     t0 = std::chrono::steady_clock::now();

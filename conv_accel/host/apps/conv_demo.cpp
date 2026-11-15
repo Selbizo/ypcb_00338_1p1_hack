@@ -130,9 +130,8 @@ cv::Mat compare_view(const cv::Mat& src, const cv::Mat& out, const std::string& 
     txt("source (host)", 0, {210, 210, 210});
     txt("FPGA result (AXI DMA loopback)", pw, {210, 210, 210});
     if (show_diff) {
-        const std::string dl = maxdiff == 0.0 ? "|diff| x16  max=0  (bit-exact)"
-                                             : cv::format("|diff| x16  max=%g", maxdiff);
-        (void)dl;
+        const std::string dl =
+            maxdiff == 0.0 ? "|source - result| x16  max=0" : cv::format("|source - result| x16  max=%g", maxdiff);
         txt(dl, 2 * pw, maxdiff == 0.0 ? cv::Scalar(120, 255, 120) : cv::Scalar(120, 180, 255));
         if (maxdiff == 0.0) {
             cv::putText(canvas, "no difference", {2 * pw + pw / 2 - 80, bar + ph / 2},
@@ -143,6 +142,35 @@ cv::Mat compare_view(const cv::Mat& src, const cv::Mat& out, const std::string& 
     cv::putText(canvas, status, {pw * panels - tw - 8, 18}, cv::FONT_HERSHEY_SIMPLEX, 0.4,
                 {180, 200, 255}, 1, cv::LINE_AA);
     return canvas;
+}
+
+// Software reference for the HLS kernel: 5x5 Gaussian (sum 256), integer
+// accumulation, truncating >>8, saturate to [0,255], BORDER_REPLICATE.
+// Matches xf::cv::filter2D as configured in hls/kernels/conv2d.
+cv::Mat conv_reference(const cv::Mat& bgr) {
+    static const int K[25] = {1, 4, 6, 4, 1, 4, 16, 24, 16, 4, 6, 24, 36, 24, 6,
+                              4, 16, 24, 16, 4, 1, 4, 6, 4, 1};
+    cv::Mat ref(bgr.size(), CV_8UC3);
+    const int rows = bgr.rows, cols = bgr.cols;
+    for (int y = 0; y < rows; ++y) {
+        uchar* o = ref.ptr<uchar>(y);
+        for (int x = 0; x < cols; ++x) {
+            for (int c = 0; c < 3; ++c) {
+                int sum = 0;
+                for (int ky = 0; ky < 5; ++ky) {
+                    const int yy = std::min(std::max(y + ky - 2, 0), rows - 1);
+                    const uchar* row = bgr.ptr<uchar>(yy);
+                    for (int kx = 0; kx < 5; ++kx) {
+                        const int xx = std::min(std::max(x + kx - 2, 0), cols - 1);
+                        sum += K[ky * 5 + kx] * static_cast<int>(row[xx * 3 + c]);
+                    }
+                }
+                int v = sum >> accel::AxidmaConv2d::kShift;
+                o[x * 3 + c] = static_cast<uchar>(std::min(std::max(v, 0), 255));
+            }
+        }
+    }
+    return ref;
 }
 
 double now_s() {
@@ -173,7 +201,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<accel::IVideoPipeline> pipe;
     if (opt.vdma) {
         bar = std::make_unique<accel::UserBar>();
-        pipe = std::make_unique<accel::AxidmaPassthrough>(xdma, *bar);
+        pipe = std::make_unique<accel::AxidmaConv2d>(xdma, *bar);
     } else {
         pipe = std::make_unique<accel::DdrLoopback>(xdma);
     }
@@ -211,11 +239,14 @@ int main(int argc, char** argv) {
         sum_up += pipe->timing().upload_ms;
         sum_down += pipe->timing().download_ms;
 
-        double maxdiff = 0.0;
-        if (opt.verify) {
-            maxdiff = cv::norm(out, frame, cv::NORM_INF);
-            if (maxdiff != 0.0) std::fprintf(stderr, "loopback mismatch: norm_inf=%g\n", maxdiff);
+        static bool verified = false;
+        if (opt.verify && !verified) {
+            const cv::Mat ref = conv_reference(frame);
+            const double d = cv::norm(out, ref, cv::NORM_INF);
+            std::printf("reference: max|fpga - software conv2d| = %g\n", d);
+            verified = true;
         }
+        const double maxdiff = opt.compare ? cv::norm(out, frame, cv::NORM_INF) : 0.0;
 
         ++frame_no;
         ++fps_n;

@@ -1,14 +1,18 @@
-// conv2d.cpp - 5x5 RGB convolution on the platform kernel slot.
+// conv2d.cpp - 5x5 RGBX convolution on the platform kernel slot (M1).
 //
-// Vitis Vision xf::cv::filter2D, streaming Mats (line buffers only, no
-// full-frame buffer), 24-bit RGB, 1 pixel/clock.
+// The platform stream is 32 bits/pixel (RGBX, alpha kept) because the
+// AXI DMA in simple mode only supports power-of-two stream widths. Pixels are
+// processed as XF_8UC4; alpha is 0xFF on input and stays 0xFF with the
+// sum-256 kernel below.
 //
-// Interface (platform kernel slot):
-//   video_in / video_out : AXI4-Stream 24 bit (TUSER = SOF, TLAST = EOL)
-//   rows, cols, shift    : AXI4-Lite control
+// Unlike the VDMA, the AXI DMA has no TUSER (SOF) and only asserts TLAST at
+// the very end of a transfer, so xf::cv::AXIvideo2xfMat/xfMat2AXIvideo cannot
+// be used. The frame is delimited by rows*cols written over AXI4-Lite.
 //
-// Coefficients are currently compile-time (Gaussian 5x5, sum = 273, shift 8).
-// Runtime coefficients will be added as 25 AXI-Lite registers.
+//   video_in  : AXI4-Stream 32 bit
+//   video_out : AXI4-Stream 32 bit (TLAST on the last pixel of the frame)
+//   rows, cols: frame geometry (AXI4-Lite)
+//   shift     : fixed-point normalisation, out = clamp((sum k*p) >> shift)
 #include <hls_stream.h>
 #include <ap_axi_sdata.h>
 
@@ -18,8 +22,52 @@
 
 #define MAX_H 2160
 #define MAX_W 3840
+#define KSIZE 5
 
-typedef ap_axiu<24, 1, 1, 1> axis_t;  // 24-bit RGB + TUSER/TID/TDEST
+typedef ap_axiu<32, 1, 1, 1> axis_t;
+
+template <int TYPE, int ROWS, int COLS, int NPC>
+static void load_frame(hls::stream<axis_t>& in, xf::cv::Mat<TYPE, ROWS, COLS, NPC>& img) {
+#pragma HLS INLINE off
+    const int rows = img.rows;
+    const int cols = img.cols;
+    int idx = 0;
+load_rows:
+    for (int i = 0; i < rows; ++i) {
+    load_cols:
+        for (int j = 0; j < cols; ++j) {
+#pragma HLS PIPELINE II = 1
+            axis_t p = in.read();
+            img.write(idx++, p.data);
+        }
+    }
+}
+
+template <int TYPE, int ROWS, int COLS, int NPC>
+static void store_frame(xf::cv::Mat<TYPE, ROWS, COLS, NPC>& img, hls::stream<axis_t>& out) {
+#pragma HLS INLINE off
+    const int rows = img.rows;
+    const int cols = img.cols;
+    const int total = rows * cols;
+    int idx = 0;
+store_rows:
+    for (int i = 0; i < rows; ++i) {
+    store_cols:
+        for (int j = 0; j < cols; ++j) {
+#pragma HLS PIPELINE II = 1
+            axis_t p;
+            p.data = img.read(idx);
+            p.keep = -1;
+            p.strb = -1;
+            p.user = (idx == 0) ? 1 : 0;
+            p.id = 0;
+            p.dest = 0;
+            ++idx;
+            p.last = (idx == total) ? 1 : 0;
+            out.write(p);
+        }
+    }
+}
 
 void conv2d(hls::stream<axis_t>& video_in,
             hls::stream<axis_t>& video_out,
@@ -35,14 +83,15 @@ void conv2d(hls::stream<axis_t>& video_in,
 
 #pragma HLS DATAFLOW
 
-    xf::cv::Mat<XF_8UC3, MAX_H, MAX_W, XF_NPPC1> src(rows, cols);
-    xf::cv::Mat<XF_8UC3, MAX_H, MAX_W, XF_NPPC1> dst(rows, cols);
+    xf::cv::Mat<XF_8UC4, MAX_H, MAX_W, XF_NPPC1> src(rows, cols);
+    xf::cv::Mat<XF_8UC4, MAX_H, MAX_W, XF_NPPC1> dst(rows, cols);
 
-    // 5x5 Gaussian (sum 273), normalized by >> shift
-    short int k[25] = {1, 4, 7, 4, 1, 4, 16, 26, 16, 4, 7, 26, 41, 26, 7, 4, 16, 26, 16, 4, 1, 4, 7, 4, 1};
+    // 5x5 Gaussian, sum = 256 -> unity gain with shift = 8, no overflow.
+    short int k[KSIZE * KSIZE] = {1, 4, 6, 4, 1, 4, 16, 24, 16, 4, 6, 24, 36, 24, 6,
+                                  4, 16, 24, 16, 4, 1, 4, 6, 4, 1};
 
-    xf::cv::AXIvideo2xfMat<24, XF_8UC3, MAX_H, MAX_W, XF_NPPC1>(video_in, src);
-    xf::cv::filter2D<XF_BORDER_REPLICATE, 5, 5, XF_8UC3, XF_8UC3, MAX_H, MAX_W, XF_NPPC1>(src, dst, k,
-                                                                                          (unsigned char)shift);
-    xf::cv::xfMat2AXIvideo<24, XF_8UC3, MAX_H, MAX_W, XF_NPPC1>(dst, video_out);
+    load_frame(video_in, src);
+    xf::cv::filter2D<XF_BORDER_REPLICATE, KSIZE, KSIZE, XF_8UC4, XF_8UC4, MAX_H, MAX_W, XF_NPPC1>(
+        src, dst, k, (unsigned char)shift);
+    store_frame(dst, video_out);
 }
