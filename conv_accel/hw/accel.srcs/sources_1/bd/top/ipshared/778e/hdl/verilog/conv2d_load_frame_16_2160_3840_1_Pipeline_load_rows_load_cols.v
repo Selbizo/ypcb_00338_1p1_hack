@@ -6,7 +6,7 @@
 
 `timescale 1 ns / 1 ps 
 
-module conv2d_load_frame_10_2160_3840_1_Pipeline_load_rows_load_cols (
+module conv2d_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols (
         ap_clk,
         ap_rst,
         ap_start,
@@ -39,7 +39,7 @@ output   ap_done;
 output   ap_idle;
 output   ap_ready;
 input   video_in_TVALID;
-output  [31:0] src_data_din;
+output  [23:0] src_data_din;
 input   src_data_full_n;
 output   src_data_write;
 input  [2:0] src_data_num_data_valid;
@@ -286,6 +286,6 @@ assign ap_ready = ap_ready_sig;
 
 assign icmp_ln36_fu_105_p2 = ((ap_sig_allocacmp_indvar_flatten_load == bound) ? 1'b1 : 1'b0);
 
-assign src_data_din = video_in_TDATA;
+assign src_data_din = video_in_TDATA[23:0];
 
-endmodule //conv2d_load_frame_10_2160_3840_1_Pipeline_load_rows_load_cols
+endmodule //conv2d_load_frame_16_2160_3840_1_Pipeline_load_rows_load_cols

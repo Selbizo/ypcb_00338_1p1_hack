@@ -313,7 +313,7 @@
                 "SX": "/conv2d_0",
                 "SI": "s_axi_control",
                 "SS": "Reg",
-                "SV": "user:hls:conv2d:1.0",
+                "SV": "user:hls:conv2d:2.0",
                 "TM": "both",
                 "TU": "register"
             },

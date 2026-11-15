@@ -8,11 +8,11 @@
 `timescale 1ns/1ps
 //RAW latency 1 
 
-module conv2d_start_for_filter2D_1_5_5_10_10_2160_3840_1_2_2_U0
+module conv2d_fifo_w24_d2_S
 #(parameter
     MEM_STYLE    = "shiftReg",
-    DATA_WIDTH   = 1,
-    ADDR_WIDTH   = 1,
+    DATA_WIDTH   = 24,
+    ADDR_WIDTH   = 2,
     DEPTH        = 2)
 (
     // system signal
@@ -26,6 +26,8 @@ module conv2d_start_for_filter2D_1_5_5_10_10_2160_3840_1_2_2_U0
     input  wire [DATA_WIDTH-1:0] if_din,
     
     // read 
+    output wire [ADDR_WIDTH:0]   if_num_data_valid, // for FRP
+    output wire [ADDR_WIDTH:0]   if_fifo_cap,       // for FRP
 
     output wire                  if_empty_n,
     input  wire                  if_read_ce,
@@ -45,11 +47,11 @@ localparam
     reg                   full_n = 1'b1; 
 
 //------------------------Instantiation------------------
-    conv2d_start_for_filter2D_1_5_5_10_10_2160_3840_1_2_2_U0_ShiftReg 
+    conv2d_fifo_w24_d2_S_ShiftReg 
     #(  .DATA_WIDTH (DATA_WIDTH),
         .ADDR_WIDTH (SRL_AWIDTH),
         .DEPTH      (SRL_DEPTH))
-    U_conv2d_start_for_filter2D_1_5_5_10_10_2160_3840_1_2_2_U0_ShiftReg (
+    U_conv2d_fifo_w24_d2_S_ShiftReg (
         .clk        (clk),
         .we         (push),
         .addr       (addr),
@@ -60,6 +62,8 @@ localparam
 
 //------------------------Body---------------------------
     // num_data_valid 
+    assign if_num_data_valid = mOutPtr;
+    assign if_fifo_cap       = DEPTH;
 
     // almost full/empty 
 
@@ -122,10 +126,10 @@ localparam
 endmodule  
 
 
-module conv2d_start_for_filter2D_1_5_5_10_10_2160_3840_1_2_2_U0_ShiftReg
+module conv2d_fifo_w24_d2_S_ShiftReg
 #(parameter
-    DATA_WIDTH  = 1,
-    ADDR_WIDTH  = 1,
+    DATA_WIDTH  = 24,
+    ADDR_WIDTH  = 2,
     DEPTH       = 2)
 (
     input  wire                  clk,

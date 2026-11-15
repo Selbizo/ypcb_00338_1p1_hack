@@ -55,13 +55,13 @@
       "axi_gpio_0": "",
       "axi_smc": "",
       "axi_dma_0": "",
-      "conv2d_0": "",
       "axi_lite": {
         "xbar": "",
         "s00_couplers": {},
         "m00_couplers": {},
         "m01_couplers": {}
-      }
+      },
+      "conv2d_0": ""
     },
     "interface_ports": {
       "DDR3_0": {
@@ -2767,13 +2767,6 @@
           }
         }
       },
-      "conv2d_0": {
-        "vlnv": "user:hls:conv2d:1.0",
-        "ip_revision": "2114874738",
-        "xci_name": "top_conv2d_0_0",
-        "xci_path": "ip/top_conv2d_0_0/top_conv2d_0_0.xci",
-        "inst_hier_path": "conv2d_0"
-      },
       "axi_lite": {
         "vlnv": "xilinx.com:ip:axi_interconnect:2.1",
         "xci_path": "ip/top_axi_lite_1/top_axi_lite_1.xci",
@@ -3129,6 +3122,13 @@
             ]
           }
         }
+      },
+      "conv2d_0": {
+        "vlnv": "user:hls:conv2d:2.0",
+        "ip_revision": "2114874993",
+        "xci_name": "top_conv2d_0_1",
+        "xci_path": "ip/top_conv2d_0_1/top_conv2d_0_1.xci",
+        "inst_hier_path": "conv2d_0"
       }
     },
     "interface_nets": {
@@ -3550,11 +3550,11 @@
           "axi_dma_0/s_axi_lite_aclk",
           "axi_dma_0/m_axi_mm2s_aclk",
           "axi_dma_0/m_axi_s2mm_aclk",
-          "conv2d_0/ap_clk",
           "axi_lite/ACLK",
           "axi_lite/M00_ACLK",
           "axi_lite/M01_ACLK",
-          "axi_lite/S00_ACLK"
+          "axi_lite/S00_ACLK",
+          "conv2d_0/ap_clk"
         ]
       },
       "xdma_0_axi_aresetn": {
@@ -3562,11 +3562,11 @@
           "xdma_0/axi_aresetn",
           "microblaze_0_axi_periph/M07_ARESETN",
           "axi_dma_0/axi_resetn",
-          "conv2d_0/ap_rst_n",
           "axi_lite/ARESETN",
           "axi_lite/M00_ARESETN",
           "axi_lite/M01_ARESETN",
-          "axi_lite/S00_ARESETN"
+          "axi_lite/S00_ARESETN",
+          "conv2d_0/ap_rst_n"
         ]
       }
     },

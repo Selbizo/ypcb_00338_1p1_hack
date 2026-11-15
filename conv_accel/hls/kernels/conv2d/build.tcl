@@ -30,7 +30,7 @@ set_part xc7k480tffg1156-2
 create_clock -period 4.000 -name default
 
 csynth_design
-export_design -format ip_catalog -vendor "user" -library "hls" -version "1.0" -output "$work/conv2d"
+export_design -format ip_catalog -vendor "user" -library "hls" -version "2.0" -output "$work/conv2d"
 
 file delete -force "$ipout/conv2d"
 file mkdir "$ipout/conv2d"
