@@ -145,8 +145,9 @@ cv::Mat compare_view(const cv::Mat& src, const cv::Mat& out, const std::string& 
 }
 
 // Software reference for the HLS kernel: 5x5 Gaussian (sum 256), integer
-// accumulation, truncating >>8, saturate to [0,255], BORDER_REPLICATE.
-// Matches xf::cv::filter2D as configured in hls/kernels/conv2d.
+// accumulation, truncating >>8, saturate to [0,255].
+// Border handling: xf::cv::filter2D behaves as zero padding in Vitis Vision
+// 2024.2 (verified in C simulation), not replicate as the enum suggests.
 cv::Mat conv_reference(const cv::Mat& bgr) {
     static const int K[25] = {1, 4, 6, 4, 1, 4, 16, 24, 16, 4, 6, 24, 36, 24, 6,
                               4, 16, 24, 16, 4, 1, 4, 6, 4, 1};
@@ -158,10 +159,12 @@ cv::Mat conv_reference(const cv::Mat& bgr) {
             for (int c = 0; c < 3; ++c) {
                 int sum = 0;
                 for (int ky = 0; ky < 5; ++ky) {
-                    const int yy = std::min(std::max(y + ky - 2, 0), rows - 1);
+                    const int yy = y + ky - 2;
+                    if (yy < 0 || yy >= rows) continue;
                     const uchar* row = bgr.ptr<uchar>(yy);
                     for (int kx = 0; kx < 5; ++kx) {
-                        const int xx = std::min(std::max(x + kx - 2, 0), cols - 1);
+                        const int xx = x + kx - 2;
+                        if (xx < 0 || xx >= cols) continue;
                         sum += K[ky * 5 + kx] * static_cast<int>(row[xx * 3 + c]);
                     }
                 }

@@ -1,18 +1,18 @@
-// conv2d.cpp - 5x5 RGBX convolution on the platform kernel slot (M1).
+// conv2d.cpp - 5x5 RGB convolution on the platform kernel slot (M1).
 //
-// The platform stream is 32 bits/pixel (RGBX, alpha kept) because the
-// AXI DMA in simple mode only supports power-of-two stream widths. Pixels are
-// processed as XF_8UC4; alpha is 0xFF on input and stays 0xFF with the
-// sum-256 kernel below.
+// The platform stream is 32 bits/pixel (RGBX) because the AXI DMA in simple
+// mode only supports power-of-two stream widths. Internally the pixels are
+// XF_8UC3: the X byte is stripped on input and set back to 0xFF on output.
+// (xf::cv::filter2D packs its result for 1 or 3 planes only, XF_8UC4 gives 0.)
 //
-// Unlike the VDMA, the AXI DMA has no TUSER (SOF) and only asserts TLAST at
-// the very end of a transfer, so xf::cv::AXIvideo2xfMat/xfMat2AXIvideo cannot
-// be used. The frame is delimited by rows*cols written over AXI4-Lite.
+// AXI DMA has no TUSER (SOF) and only asserts TLAST at the end of a transfer,
+// so xf::cv::AXIvideo2xfMat/xfMat2AXIvideo cannot be used; the frame is
+// delimited by rows*cols from AXI4-Lite.
 //
-//   video_in  : AXI4-Stream 32 bit
-//   video_out : AXI4-Stream 32 bit (TLAST on the last pixel of the frame)
+//   video_in  : AXI4-Stream 32 bit (X ignored)
+//   video_out : AXI4-Stream 32 bit (X = 0xFF, TLAST on the last pixel)
 //   rows, cols: frame geometry (AXI4-Lite)
-//   shift     : fixed-point normalisation, out = clamp((sum k*p) >> shift)
+//   shift     : out = clamp((sum k*p) >> shift)
 #include <hls_stream.h>
 #include <ap_axi_sdata.h>
 
@@ -38,7 +38,8 @@ load_rows:
         for (int j = 0; j < cols; ++j) {
 #pragma HLS PIPELINE II = 1
             axis_t p = in.read();
-            img.write(idx++, p.data);
+            ap_uint<24> rgb = p.data(23, 0);
+            img.write(idx++, rgb);
         }
     }
 }
@@ -56,10 +57,11 @@ store_rows:
         for (int j = 0; j < cols; ++j) {
 #pragma HLS PIPELINE II = 1
             axis_t p;
-            p.data = img.read(idx);
+            ap_uint<24> rgb = img.read(idx);
+            p.data = ((ap_uint<32>)0xFF << 24) | (ap_uint<32>)rgb;
             p.keep = -1;
             p.strb = -1;
-            p.user = (idx == 0) ? 1 : 0;
+            p.user = 0;
             p.id = 0;
             p.dest = 0;
             ++idx;
@@ -83,15 +85,15 @@ void conv2d(hls::stream<axis_t>& video_in,
 
 #pragma HLS DATAFLOW
 
-    xf::cv::Mat<XF_8UC4, MAX_H, MAX_W, XF_NPPC1> src(rows, cols);
-    xf::cv::Mat<XF_8UC4, MAX_H, MAX_W, XF_NPPC1> dst(rows, cols);
+    xf::cv::Mat<XF_8UC3, MAX_H, MAX_W, XF_NPPC1> src(rows, cols);
+    xf::cv::Mat<XF_8UC3, MAX_H, MAX_W, XF_NPPC1> dst(rows, cols);
 
     // 5x5 Gaussian, sum = 256 -> unity gain with shift = 8, no overflow.
     short int k[KSIZE * KSIZE] = {1, 4, 6, 4, 1, 4, 16, 24, 16, 4, 6, 24, 36, 24, 6,
                                   4, 16, 24, 16, 4, 1, 4, 6, 4, 1};
 
     load_frame(video_in, src);
-    xf::cv::filter2D<XF_BORDER_REPLICATE, KSIZE, KSIZE, XF_8UC4, XF_8UC4, MAX_H, MAX_W, XF_NPPC1>(
+    xf::cv::filter2D<XF_BORDER_REPLICATE, KSIZE, KSIZE, XF_8UC3, XF_8UC3, MAX_H, MAX_W, XF_NPPC1>(
         src, dst, k, (unsigned char)shift);
     store_frame(dst, video_out);
 }
