@@ -153,7 +153,7 @@ cv::Mat compare_view(const cv::Mat& src, const cv::Mat& out, const std::string& 
 // Border handling: xf::cv::filter2D behaves as zero padding in Vitis Vision
 // 2024.2 (verified in C simulation), not replicate as the enum suggests.
 cv::Mat conv_reference(const cv::Mat& bgr, const accel::Filter& f) {
-    const int* K = reinterpret_cast<const int*>(f.k);
+    const int16_t* K = f.k;
     cv::Mat ref(bgr.size(), CV_8UC3);
     const int rows = bgr.rows, cols = bgr.cols;
     for (int y = 0; y < rows; ++y) {

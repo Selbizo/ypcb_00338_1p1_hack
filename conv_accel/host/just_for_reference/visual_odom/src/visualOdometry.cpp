@@ -1,0 +1,312 @@
+#include "visualOdometry.h"
+using namespace cv;
+using namespace std;
+
+cv::Mat euler2rot(cv::Mat& rotationMatrix, const cv::Mat & euler)
+{
+
+  double x = euler.at<double>(0);
+  double y = euler.at<double>(1);
+  double z = euler.at<double>(2);
+
+  // Assuming the angles are in radians.
+  double ch = cos(z);
+  double sh = sin(z);
+  double ca = cos(y);
+  double sa = sin(y);
+  double cb = cos(x);
+  double sb = sin(x);
+
+  double m00, m01, m02, m10, m11, m12, m20, m21, m22;
+
+  m00 = ch * ca;
+  m01 = sh*sb - ch*sa*cb;
+  m02 = ch*sa*sb + sh*cb;
+  m10 = sa;
+  m11 = ca*cb;
+  m12 = -ca*sb;
+  m20 = -sh*ca;
+  m21 = sh*sa*cb + ch*sb;
+  m22 = -sh*sa*sb + ch*cb;
+
+  rotationMatrix.at<double>(0,0) = m00;
+  rotationMatrix.at<double>(0,1) = m01;
+  rotationMatrix.at<double>(0,2) = m02;
+  rotationMatrix.at<double>(1,0) = m10;
+  rotationMatrix.at<double>(1,1) = m11;
+  rotationMatrix.at<double>(1,2) = m12;
+  rotationMatrix.at<double>(2,0) = m20;
+  rotationMatrix.at<double>(2,1) = m21;
+  rotationMatrix.at<double>(2,2) = m22;
+
+  return rotationMatrix;
+}
+
+void checkValidMatch(std::vector<cv::Point2f>& points, std::vector<cv::Point2f>& points_return, std::vector<bool>& status, int threshold)
+{
+    int offset;
+    for (int i = 0; i < points.size(); i++)
+    {
+        offset = std::max(std::abs(points[i].x - points_return[i].x), std::abs(points[i].y - points_return[i].y));
+        // std::cout << offset << ", ";
+
+        if(offset > threshold)
+        {
+            status.push_back(false);
+        }
+        else
+        {
+            status.push_back(true);
+        }
+    }
+}
+
+void removeInvalidPoints(std::vector<cv::Point2f>& points, const std::vector<bool>& status)
+{
+    int index = 0;
+    for (int i = 0; i < status.size(); i++)
+    {
+        if (status[i] == false)
+        {
+            points.erase(points.begin() + index);
+        }
+        else
+        {
+            index ++;
+        }
+    }
+}
+
+
+
+void matchingFeatures(cv::Mat& imageLeft_t0, cv::Mat& imageRight_t0,
+                      cv::Mat& imageLeft_t1, cv::Mat& imageRight_t1, 
+                      FeatureSet& currentVOFeatures,
+                      std::vector<cv::Point2f>&  pointsLeft_t0, 
+                      std::vector<cv::Point2f>&  pointsRight_t0, 
+                      std::vector<cv::Point2f>&  pointsLeft_t1, 
+                      std::vector<cv::Point2f>&  pointsRight_t1,
+                      double crop)
+{
+    // ----------------------------
+    // Feature detection using FAST
+    // ----------------------------
+    std::vector<cv::Point2f>  pointsLeftReturn_t0;   // feature points to check cicular mathcing validation
+
+    if (currentVOFeatures.size() < 2000)
+    {
+        // append new features with old features
+        appendNewFeatures(imageLeft_t0, currentVOFeatures);   
+        // std::cout << "Current feature set size: " << currentVOFeatures.points.size() << std::endl;
+    }
+
+    // --------------------------------------------------------
+    // Feature tracking using KLT tracker, bucketing and circular matching
+    // --------------------------------------------------------
+    int bucket_size = imageLeft_t0.rows/20;
+    int features_per_bucket = 1;
+    bucketingFeatures(imageLeft_t0, currentVOFeatures, bucket_size, features_per_bucket, crop);
+
+    pointsLeft_t0 = currentVOFeatures.points;
+    
+    #if USE_CUDA
+    	circularMatching_gpu(imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1,
+                     pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1, pointsLeftReturn_t0, currentVOFeatures);
+    #else
+	    circularMatching(imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1,
+                     pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1, pointsLeftReturn_t0, currentVOFeatures);
+    #endif
+    std::vector<bool> status;
+    checkValidMatch(pointsLeft_t0, pointsLeftReturn_t0, status, 0);
+
+    removeInvalidPoints(pointsLeft_t0, status);
+    removeInvalidPoints(pointsLeft_t1, status);
+    removeInvalidPoints(pointsRight_t0, status);
+    removeInvalidPoints(pointsRight_t1, status);
+
+    currentVOFeatures.points = pointsLeft_t1;
+}
+
+void matchingFeaturesStab(cv::Mat& imageLeft_t0, cv::Mat& imageRight_t0,
+                      cv::Mat& imageLeft_t1, cv::Mat& imageRight_t1, 
+                      FeatureSet& currentVOFeatures,
+                      std::vector<cv::Point2f>&  pointsLeft_t0, 
+                      std::vector<cv::Point2f>&  pointsRight_t0, 
+                      std::vector<cv::Point2f>&  pointsLeft_t1, 
+                      std::vector<cv::Point2f>&  pointsRight_t1,
+                      Ptr<cuda::CornersDetector>& d_features,
+                      double crop)
+{
+    // ----------------------------
+    // Feature detection using FAST
+    // ----------------------------
+    std::vector<cv::Point2f>  pointsLeftReturn_t0;   // feature points to check cicular mathcing validation
+
+    if (currentVOFeatures.size() < 1000)
+    {
+        // append new features with old features
+        appendNewFeatures(d_features, imageLeft_t0, currentVOFeatures);   
+        // std::cout << "Current feature set size: " << currentVOFeatures.points.size() << std::endl;
+    }
+
+    // --------------------------------------------------------
+    // Feature tracking using KLT tracker, bucketing and circular matching
+    // --------------------------------------------------------
+
+    int bucket_size = imageLeft_t0.rows/21;
+    int features_per_bucket = 10;
+    bucketingFeatures(imageLeft_t0, currentVOFeatures, bucket_size, features_per_bucket, crop);
+
+    pointsLeft_t0 = currentVOFeatures.points;
+    
+    #if USE_CUDA
+    	circularMatching_gpu(imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1,
+                     pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1, pointsLeftReturn_t0, currentVOFeatures);
+    #else
+	    circularMatching(imageLeft_t0, imageRight_t0, imageLeft_t1, imageRight_t1,
+                     pointsLeft_t0, pointsRight_t0, pointsLeft_t1, pointsRight_t1, pointsLeftReturn_t0, currentVOFeatures);
+    #endif
+    std::vector<bool> status;
+    checkValidMatch(pointsLeft_t0, pointsLeftReturn_t0, status, 0);
+
+    removeInvalidPoints(pointsLeft_t0, status);
+    removeInvalidPoints(pointsLeft_t1, status);
+    removeInvalidPoints(pointsRight_t0, status);
+    removeInvalidPoints(pointsRight_t1, status);
+
+    currentVOFeatures.points = pointsLeft_t1;
+}
+
+void trackingFrame2Frame(const cv::Mat& projMatrl, const cv::Mat& projMatrr,
+                         std::vector<cv::Point2f>&  pointsLeft_t0,
+                         std::vector<cv::Point2f>&  pointsLeft_t1, 
+                         cv::Mat& points3D_t0,
+                         cv::Mat& rotation,
+                         cv::Mat& translation,
+                         unsigned int frame_skip,
+                         bool mono_rotation)
+{
+
+      // Calculate frame to frame transformation
+
+      // -----------------------------------------------------------
+      // Rotation(R) estimation using Nister's Five Points Algorithm
+      // -----------------------------------------------------------
+      double focal = projMatrl.at<float>(0, 0);
+      cv::Point2d principle_point(projMatrl.at<float>(0, 2), projMatrl.at<float>(1, 2));
+
+      //recovering the pose and the essential cv::matrix
+      cv::Mat E, mask;
+      cv::Mat translation_mono = cv::Mat::zeros(3, 1, CV_64F);
+      if(mono_rotation)
+      {
+      	E = cv::findEssentialMat(pointsLeft_t0, pointsLeft_t1, focal, principle_point, cv::RANSAC, 0.999, 1.0, mask);
+      	cv::recoverPose(E, pointsLeft_t0, pointsLeft_t1, rotation, translation_mono, focal, principle_point, mask);
+      	// std::cout << "recoverPose rotation: " << rotation << std::endl;
+      }
+      // ------------------------------------------------
+      // Translation (t) estimation by use solvePnPRansac
+      // ------------------------------------------------
+      cv::Mat distCoeffs = cv::Mat::zeros(4, 1, CV_64FC1);   
+      cv::Mat rvec = cv::Mat::zeros(3, 1, CV_64FC1);
+      cv::Mat intrinsic_matrix = (cv::Mat_<float>(3, 3) << projMatrl.at<float>(0, 0), projMatrl.at<float>(0, 1), projMatrl.at<float>(0, 2),
+                                                   projMatrl.at<float>(1, 0), projMatrl.at<float>(1, 1), projMatrl.at<float>(1, 2),
+                                                   projMatrl.at<float>(2, 0), projMatrl.at<float>(2, 1), projMatrl.at<float>(2, 2));
+                                                   // projMatrl.at<float>(1, 1), projMatrl.at<float>(1, 2), projMatrl.at<float>(1, 3));
+
+      int iterationsCount = 500;        // number of Ransac iterations.
+      float reprojectionError = .5;    // maximum allowed distance to consider it an inlier.
+      float confidence = 0.999;          // RANSAC successful confidence.
+      bool useExtrinsicGuess = true;
+      int flags =cv::SOLVEPNP_ITERATIVE;
+
+      #if 1
+      cv::Mat inliers;
+      cv::solvePnPRansac( points3D_t0, pointsLeft_t1, intrinsic_matrix, distCoeffs, rvec, translation,
+                          useExtrinsicGuess, iterationsCount, reprojectionError, confidence,
+                          inliers, flags );
+      #endif
+      #if 0
+      std::vector<int> inliers;
+      cv::cuda::solvePnPRansac(points3D_t0.t(), cv::Mat(1, (int)pointsLeft_t1.size(), CV_32FC2, &pointsLeft_t1[0]),
+                            intrinsic_matrix, cv::Mat(1, 8, CV_32F, cv::Scalar::all(0)),
+                            rvec, translation, false, 200, 0.5, 20, &inliers);
+      #endif
+      if (!mono_rotation)
+      {
+        //cv::multiply(rvec, cv::Mat::ones(3,1, CV_64FC1)*2, rvec);
+        cv::Rodrigues(rvec, rotation);
+      }
+
+    //   std::cout << "[trackingFrame2Frame] inliers size: " << inliers.size() << std::endl;
+
+}
+
+void displayTracking(cv::Mat& imageLeft_t1,
+                      std::vector<cv::Point2f>&  pointsLeft_t0,
+                      std::vector<cv::Point2f>&  pointsLeft_t1,
+                      std::string name,
+                      const cv::Mat& trajectory_biased)
+{
+      // -----------------------------------------
+      // Display feature racking
+      // -----------------------------------------
+      int radius = 2;
+      cv::Mat vis;
+      cv::cvtColor(imageLeft_t1, vis, cv::COLOR_GRAY2BGR, 3);
+
+
+      for (int i = 0; i < pointsLeft_t0.size(); i++)
+      {
+          cv::circle(vis, cv::Point(pointsLeft_t0[i].x, pointsLeft_t0[i].y), radius, CV_RGB(100, 0, 0));
+      }
+
+      for (int i = 0; i < pointsLeft_t1.size(); i++)
+      {
+          cv::circle(vis, cv::Point(pointsLeft_t1[i].x, pointsLeft_t1[i].y), radius+1, CV_RGB(200, 0, 0), -1);
+      }
+
+      for (int i = 0; i < pointsLeft_t1.size(); i++)
+      {
+          cv::line(vis, pointsLeft_t0[i], pointsLeft_t1[i], CV_RGB(10, 100, 10));
+      }
+
+      // Overlay only the trajectory line on top of the frame (transparent background)
+      if (!trajectory_biased.empty()) {
+          int max_w = std::min(vis.cols - 40, (int)trajectory_biased.cols);
+          int max_h = std::min(vis.rows - 40, (int)trajectory_biased.rows);
+          double scale = std::min((double)max_w / trajectory_biased.cols,
+                                  (double)max_h / trajectory_biased.rows);
+          cv::Size dsize = cv::Size(std::round(trajectory_biased.cols * scale),
+                                    std::round(trajectory_biased.rows * scale));
+
+          cv::Mat mini, temp_vis;
+          trajectory_biased.convertTo(temp_vis, vis.type());
+          cv::resize(temp_vis, mini, dsize, 0, 0, cv::INTER_LINEAR);
+
+          // Mask of trajectory pixels (anything not near-black)
+          cv::Mat gray, mask;
+          cv::cvtColor(mini, gray, cv::COLOR_BGR2GRAY);
+          cv::threshold(gray, mask, 8, 255, cv::THRESH_BINARY);
+
+          // Thicken the line so it reads clearly after downscaling
+          cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+          cv::dilate(mask, mask, kernel);
+
+          // Dark outline for contrast against bright backgrounds (road, sky)
+          cv::Mat outline;
+          cv::dilate(mask, outline, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
+
+          int x = 20;
+          int y = (vis.rows - mini.rows) / 2;
+          cv::Rect mini_rect(x, y, mini.cols, mini.rows);
+          cv::Mat roi = vis(mini_rect);
+
+          // Draw a solid black outline, then a bright trajectory line on top
+          roi.setTo(cv::Scalar(0, 0, 0), outline);
+          roi.setTo(CV_RGB(0, 255, 255), mask);   // vivid yellow line (C++ BGR)
+      }
+
+    //   cv::waitKey(200);
+      cv::imshow(name, vis );
+}

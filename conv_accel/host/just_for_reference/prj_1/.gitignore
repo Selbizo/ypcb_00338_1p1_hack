@@ -1,0 +1,8 @@
+.vscode/
+OutputResults/
+OutputVideos/
+/Sample.png
+SourceVideos/
+SourceVideosAuto/
+build/
+.cache/
