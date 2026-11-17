@@ -8,7 +8,7 @@ open_project $proj
 
 # The PCIe user-clock (userclk1, 250 MHz) paths inside the Xilinx PCIe IP are
 # marginal with the default strategy: use the post-route phys_opt strategy.
-set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
+set_property strategy {Vivado Implementation Defaults} [get_runs impl_1]
 
 # BD is an out-of-context BlockSrcs source: build it first, then the wrapper.
 reset_run top_synth_1
