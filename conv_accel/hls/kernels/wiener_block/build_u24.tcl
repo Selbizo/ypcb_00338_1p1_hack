@@ -4,6 +4,7 @@ set hdr   "/mnt/tools/Xilinx/Vitis/2024.2/common/technology/autopilot/hls_fft.h"
 file delete -force $work
 file mkdir $work
 file copy -force "$here/wiener_block_unscaled.cpp" "$work/wiener_block_u24.cpp"
+file copy -force "$here/g_lut.h" "$work/g_lut.h"
 file copy -force $hdr "$work/hls_fft_rt.h"
 exec sed -i {s/"nonrealtime"/"realtime"/g} "$work/hls_fft_rt.h"
 cd $work

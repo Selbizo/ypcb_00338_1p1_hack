@@ -9,6 +9,7 @@
 #include <hls_stream.h>
 #include <complex>
 #include <math.h>
+#include "g_lut.h"
 
 #ifndef N
 #define N 128
@@ -66,14 +67,22 @@ static cplx_t cmul(cplx_t a, cplx_t b) {
                   a.real()*b.imag() + a.imag()*b.real());
 }
 
-static cplx_t gbin(int kx, int ky, double L, double th, double nsr, double gs) {
+#define LUT_A 96.0f
+#define LUT_M 8192
+static cplx_t gbin_lut(int kx, int ky, float L, float ct, float st) {
     int sx = (kx < N/2) ? kx : kx - N;
     int sy = (ky < N/2) ? ky : ky - N;
-    double a  = (L/(double)N) * (sx*cos(th) + sy*sin(th));
-    double pa = M_PI * a;
-    double s  = (fabs(a) < 1e-9) ? 1.0 : sin(pa)/pa;
-    double d  = s*s + nsr;
-    return cplx_t(sample_t(gs*s*cos(pa)/d), sample_t(gs*s*sin(pa)/d));
+    float a = (L/(float)N) * (sx*ct + sy*st);
+    float x = (a + LUT_A) * (LUT_M/(2.0f*LUT_A)) - 0.5f;
+    int i0 = (int)x;
+    if (i0 < 0) i0 = 0;
+    if (i0 >= LUT_M - 1) i0 = LUT_M - 2;
+    float f = x - (float)i0;
+    if (f < 0.0f) f = 0.0f;
+    if (f > 1.0f) f = 1.0f;
+    float re = (1.0f-f)*g_lut_re[i0] + f*g_lut_re[i0+1];
+    float im = (1.0f-f)*g_lut_im[i0] + f*g_lut_im[i0+1];
+    return cplx_t(sample_t(re/32768.0f), sample_t(im/32768.0f));
 }
 
 void wiener_block_u(cplx_t in[N][N], cplx_w_t out[N][N],
@@ -90,6 +99,8 @@ void wiener_block_u(cplx_t in[N][N], cplx_w_t out[N][N],
 #pragma HLS array_partition variable=B complete dim=4
 
     double L = Lf, th = thf, nsr = nsrf, gs = gsf;
+    float ct = cosf((float)th), st = sinf((float)th);
+    (void)nsr; (void)gs;
 
     for (int r = 0; r < N; ++r)
         for (int c = 0; c < N; ++c) {
@@ -143,7 +154,7 @@ void wiener_block_u(cplx_t in[N][N], cplx_w_t out[N][N],
             for (int p = 0; p < PAR; ++p) {
 #pragma HLS unroll
                 cplx_t v = narrow(xk[p][r], 8);
-                xi[p][r] = mode ? v : cmul(v, gbin(c0+p, r, L, th, nsr, gs));
+                xi[p][r] = mode ? v : cmul(v, gbin_lut(c0+p, r, (float)L, ct, st));
             }
         }
         for (int p = 0; p < PAR; ++p) {
