@@ -59,9 +59,32 @@
         "xbar": "",
         "s00_couplers": {},
         "m00_couplers": {},
-        "m01_couplers": {}
+        "m01_couplers": {},
+        "m02_couplers": {},
+        "m03_couplers": {}
       },
-      "conv2d_0": ""
+      "conv2d_0": "",
+      "const_one": "",
+      "const_c0": "",
+      "const_c1": "",
+      "axi_dma_1": "",
+      "wiener_0": "",
+      "fft_fwd_0": "",
+      "fft_inv_0": "",
+      "fft_fwd_1": "",
+      "fft_inv_1": "",
+      "fft_fwd_2": "",
+      "fft_inv_2": "",
+      "fft_fwd_3": "",
+      "fft_inv_3": "",
+      "fft_fwd_4": "",
+      "fft_inv_4": "",
+      "fft_fwd_5": "",
+      "fft_inv_5": "",
+      "fft_fwd_6": "",
+      "fft_inv_6": "",
+      "fft_fwd_7": "",
+      "fft_inv_7": ""
     },
     "interface_ports": {
       "DDR3_0": {
@@ -2558,7 +2581,7 @@
             "value": "2"
           },
           "NUM_SI": {
-            "value": "4"
+            "value": "6"
           }
         },
         "interface_ports": {
@@ -2614,6 +2637,40 @@
             ]
           },
           "S03_AXI": {
+            "mode": "Slave",
+            "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
+            "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+            "parameters": {
+              "NUM_READ_OUTSTANDING": {
+                "value": "2"
+              },
+              "NUM_WRITE_OUTSTANDING": {
+                "value": "16"
+              }
+            },
+            "bridges": [
+              "M00_AXI",
+              "M01_AXI"
+            ]
+          },
+          "S04_AXI": {
+            "mode": "Slave",
+            "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
+            "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+            "parameters": {
+              "NUM_READ_OUTSTANDING": {
+                "value": "16"
+              },
+              "NUM_WRITE_OUTSTANDING": {
+                "value": "2"
+              }
+            },
+            "bridges": [
+              "M00_AXI",
+              "M01_AXI"
+            ]
+          },
+          "S05_AXI": {
             "mode": "Slave",
             "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
             "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
@@ -2774,7 +2831,7 @@
         "xci_name": "top_axi_lite_1",
         "parameters": {
           "NUM_MI": {
-            "value": "2"
+            "value": "4"
           },
           "NUM_SI": {
             "value": "1"
@@ -2792,6 +2849,16 @@
             "vlnv": "xilinx.com:interface:aximm_rtl:1.0"
           },
           "M01_AXI": {
+            "mode": "Master",
+            "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
+            "vlnv": "xilinx.com:interface:aximm_rtl:1.0"
+          },
+          "M02_AXI": {
+            "mode": "Master",
+            "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
+            "vlnv": "xilinx.com:interface:aximm_rtl:1.0"
+          },
+          "M03_AXI": {
             "mode": "Master",
             "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
             "vlnv": "xilinx.com:interface:aximm_rtl:1.0"
@@ -2858,6 +2925,38 @@
           "M01_ARESETN": {
             "type": "rst",
             "direction": "I"
+          },
+          "M02_ACLK": {
+            "type": "clk",
+            "direction": "I",
+            "parameters": {
+              "ASSOCIATED_BUSIF": {
+                "value": "M02_AXI"
+              },
+              "ASSOCIATED_RESET": {
+                "value": "M02_ARESETN"
+              }
+            }
+          },
+          "M02_ARESETN": {
+            "type": "rst",
+            "direction": "I"
+          },
+          "M03_ACLK": {
+            "type": "clk",
+            "direction": "I",
+            "parameters": {
+              "ASSOCIATED_BUSIF": {
+                "value": "M03_AXI"
+              },
+              "ASSOCIATED_RESET": {
+                "value": "M03_ARESETN"
+              }
+            }
+          },
+          "M03_ARESETN": {
+            "type": "rst",
+            "direction": "I"
           }
         },
         "components": {
@@ -2869,7 +2968,7 @@
             "inst_hier_path": "axi_lite/xbar",
             "parameters": {
               "NUM_MI": {
-                "value": "2"
+                "value": "4"
               },
               "NUM_SI": {
                 "value": "1"
@@ -2884,7 +2983,9 @@
                 "mode": "Slave",
                 "bridges": [
                   "M00_AXI",
-                  "M01_AXI"
+                  "M01_AXI",
+                  "M02_AXI",
+                  "M03_AXI"
                 ]
               }
             }
@@ -3056,6 +3157,118 @@
                 ]
               }
             }
+          },
+          "m02_couplers": {
+            "interface_ports": {
+              "M_AXI": {
+                "mode": "Master",
+                "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
+                "vlnv": "xilinx.com:interface:aximm_rtl:1.0"
+              },
+              "S_AXI": {
+                "mode": "Slave",
+                "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
+                "vlnv": "xilinx.com:interface:aximm_rtl:1.0"
+              }
+            },
+            "ports": {
+              "M_ACLK": {
+                "type": "clk",
+                "direction": "I",
+                "parameters": {
+                  "ASSOCIATED_BUSIF": {
+                    "value": "M_AXI"
+                  },
+                  "ASSOCIATED_RESET": {
+                    "value": "M_ARESETN"
+                  }
+                }
+              },
+              "M_ARESETN": {
+                "type": "rst",
+                "direction": "I"
+              },
+              "S_ACLK": {
+                "type": "clk",
+                "direction": "I",
+                "parameters": {
+                  "ASSOCIATED_BUSIF": {
+                    "value": "S_AXI"
+                  },
+                  "ASSOCIATED_RESET": {
+                    "value": "S_ARESETN"
+                  }
+                }
+              },
+              "S_ARESETN": {
+                "type": "rst",
+                "direction": "I"
+              }
+            },
+            "interface_nets": {
+              "m02_couplers_to_m02_couplers": {
+                "interface_ports": [
+                  "S_AXI",
+                  "M_AXI"
+                ]
+              }
+            }
+          },
+          "m03_couplers": {
+            "interface_ports": {
+              "M_AXI": {
+                "mode": "Master",
+                "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
+                "vlnv": "xilinx.com:interface:aximm_rtl:1.0"
+              },
+              "S_AXI": {
+                "mode": "Slave",
+                "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
+                "vlnv": "xilinx.com:interface:aximm_rtl:1.0"
+              }
+            },
+            "ports": {
+              "M_ACLK": {
+                "type": "clk",
+                "direction": "I",
+                "parameters": {
+                  "ASSOCIATED_BUSIF": {
+                    "value": "M_AXI"
+                  },
+                  "ASSOCIATED_RESET": {
+                    "value": "M_ARESETN"
+                  }
+                }
+              },
+              "M_ARESETN": {
+                "type": "rst",
+                "direction": "I"
+              },
+              "S_ACLK": {
+                "type": "clk",
+                "direction": "I",
+                "parameters": {
+                  "ASSOCIATED_BUSIF": {
+                    "value": "S_AXI"
+                  },
+                  "ASSOCIATED_RESET": {
+                    "value": "S_ARESETN"
+                  }
+                }
+              },
+              "S_ARESETN": {
+                "type": "rst",
+                "direction": "I"
+              }
+            },
+            "interface_nets": {
+              "m03_couplers_to_m03_couplers": {
+                "interface_ports": [
+                  "S_AXI",
+                  "M_AXI"
+                ]
+              }
+            }
           }
         },
         "interface_nets": {
@@ -3077,6 +3290,18 @@
               "M01_AXI"
             ]
           },
+          "m02_couplers_to_axi_lite": {
+            "interface_ports": [
+              "m02_couplers/M_AXI",
+              "M02_AXI"
+            ]
+          },
+          "m03_couplers_to_axi_lite": {
+            "interface_ports": [
+              "m03_couplers/M_AXI",
+              "M03_AXI"
+            ]
+          },
           "s00_couplers_to_xbar": {
             "interface_ports": [
               "s00_couplers/M_AXI",
@@ -3094,6 +3319,18 @@
               "xbar/M01_AXI",
               "m01_couplers/S_AXI"
             ]
+          },
+          "xbar_to_m02_couplers": {
+            "interface_ports": [
+              "xbar/M02_AXI",
+              "m02_couplers/S_AXI"
+            ]
+          },
+          "xbar_to_m03_couplers": {
+            "interface_ports": [
+              "xbar/M03_AXI",
+              "m03_couplers/S_AXI"
+            ]
           }
         },
         "nets": {
@@ -3105,8 +3342,12 @@
               "s00_couplers/M_ACLK",
               "m00_couplers/M_ACLK",
               "m01_couplers/M_ACLK",
+              "m02_couplers/M_ACLK",
+              "m03_couplers/M_ACLK",
               "m00_couplers/S_ACLK",
-              "m01_couplers/S_ACLK"
+              "m01_couplers/S_ACLK",
+              "m02_couplers/S_ACLK",
+              "m03_couplers/S_ACLK"
             ]
           },
           "axi_lite_ARESETN_net": {
@@ -3117,8 +3358,12 @@
               "s00_couplers/M_ARESETN",
               "m00_couplers/M_ARESETN",
               "m01_couplers/M_ARESETN",
+              "m02_couplers/M_ARESETN",
+              "m03_couplers/M_ARESETN",
               "m00_couplers/S_ARESETN",
-              "m01_couplers/S_ARESETN"
+              "m01_couplers/S_ARESETN",
+              "m02_couplers/S_ARESETN",
+              "m03_couplers/S_ARESETN"
             ]
           }
         }
@@ -3129,6 +3374,848 @@
         "xci_name": "top_conv2d_0_2",
         "xci_path": "ip/top_conv2d_0_2/top_conv2d_0_2.xci",
         "inst_hier_path": "conv2d_0"
+      },
+      "const_one": {
+        "vlnv": "xilinx.com:ip:xlconstant:1.1",
+        "ip_revision": "9",
+        "xci_name": "top_const_one_0",
+        "xci_path": "ip/top_const_one_0/top_const_one_0.xci",
+        "inst_hier_path": "const_one",
+        "parameters": {
+          "CONST_VAL": {
+            "value": "1"
+          },
+          "CONST_WIDTH": {
+            "value": "1"
+          }
+        }
+      },
+      "const_c0": {
+        "vlnv": "xilinx.com:ip:xlconstant:1.1",
+        "ip_revision": "9",
+        "xci_name": "top_const_c0_0",
+        "xci_path": "ip/top_const_c0_0/top_const_c0_0.xci",
+        "inst_hier_path": "const_c0",
+        "parameters": {
+          "CONST_VAL": {
+            "value": "0"
+          },
+          "CONST_WIDTH": {
+            "value": "8"
+          }
+        }
+      },
+      "const_c1": {
+        "vlnv": "xilinx.com:ip:xlconstant:1.1",
+        "ip_revision": "9",
+        "xci_name": "top_const_c1_0",
+        "xci_path": "ip/top_const_c1_0/top_const_c1_0.xci",
+        "inst_hier_path": "const_c1",
+        "parameters": {
+          "CONST_VAL": {
+            "value": "1"
+          },
+          "CONST_WIDTH": {
+            "value": "8"
+          }
+        }
+      },
+      "axi_dma_1": {
+        "vlnv": "xilinx.com:ip:axi_dma:7.1",
+        "ip_revision": "34",
+        "xci_name": "top_axi_dma_1_0",
+        "xci_path": "ip/top_axi_dma_1_0/top_axi_dma_1_0.xci",
+        "inst_hier_path": "axi_dma_1",
+        "parameters": {
+          "c_addr_width": {
+            "value": "32"
+          },
+          "c_include_mm2s": {
+            "value": "1"
+          },
+          "c_include_s2mm": {
+            "value": "1"
+          },
+          "c_include_sg": {
+            "value": "0"
+          },
+          "c_m_axi_mm2s_data_width": {
+            "value": "64"
+          },
+          "c_m_axi_s2mm_data_width": {
+            "value": "64"
+          },
+          "c_m_axis_mm2s_tdata_width": {
+            "value": "32"
+          },
+          "c_s_axis_s2mm_tdata_width": {
+            "value": "32"
+          },
+          "c_sg_length_width": {
+            "value": "26"
+          }
+        },
+        "interface_ports": {
+          "M_AXI_MM2S": {
+            "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+            "mode": "Master",
+            "address_space_ref": "Data_MM2S",
+            "base_address": {
+              "minimum": "0x00000000",
+              "maximum": "0xFFFFFFFF",
+              "width": "32"
+            }
+          },
+          "M_AXI_S2MM": {
+            "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+            "mode": "Master",
+            "address_space_ref": "Data_S2MM",
+            "base_address": {
+              "minimum": "0x00000000",
+              "maximum": "0xFFFFFFFF",
+              "width": "32"
+            }
+          }
+        },
+        "addressing": {
+          "address_spaces": {
+            "Data_MM2S": {
+              "range": "4G",
+              "width": "32"
+            },
+            "Data_S2MM": {
+              "range": "4G",
+              "width": "32"
+            }
+          }
+        }
+      },
+      "wiener_0": {
+        "vlnv": "user:hls:wiener_stream:1.0",
+        "ip_revision": "2114878134",
+        "xci_name": "top_wiener_0_0",
+        "xci_path": "ip/top_wiener_0_0/top_wiener_0_0.xci",
+        "inst_hier_path": "wiener_0"
+      },
+      "fft_fwd_0": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_fwd_0_0",
+        "xci_path": "ip/top_fft_fwd_0_0/top_fft_fwd_0_0.xci",
+        "inst_hier_path": "fft_fwd_0",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
+      },
+      "fft_inv_0": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_inv_0_0",
+        "xci_path": "ip/top_fft_inv_0_0/top_fft_inv_0_0.xci",
+        "inst_hier_path": "fft_inv_0",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
+      },
+      "fft_fwd_1": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_fwd_1_0",
+        "xci_path": "ip/top_fft_fwd_1_0/top_fft_fwd_1_0.xci",
+        "inst_hier_path": "fft_fwd_1",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
+      },
+      "fft_inv_1": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_inv_1_0",
+        "xci_path": "ip/top_fft_inv_1_0/top_fft_inv_1_0.xci",
+        "inst_hier_path": "fft_inv_1",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
+      },
+      "fft_fwd_2": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_fwd_2_0",
+        "xci_path": "ip/top_fft_fwd_2_0/top_fft_fwd_2_0.xci",
+        "inst_hier_path": "fft_fwd_2",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
+      },
+      "fft_inv_2": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_inv_2_0",
+        "xci_path": "ip/top_fft_inv_2_0/top_fft_inv_2_0.xci",
+        "inst_hier_path": "fft_inv_2",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
+      },
+      "fft_fwd_3": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_fwd_3_0",
+        "xci_path": "ip/top_fft_fwd_3_0/top_fft_fwd_3_0.xci",
+        "inst_hier_path": "fft_fwd_3",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
+      },
+      "fft_inv_3": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_inv_3_0",
+        "xci_path": "ip/top_fft_inv_3_0/top_fft_inv_3_0.xci",
+        "inst_hier_path": "fft_inv_3",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
+      },
+      "fft_fwd_4": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_fwd_4_0",
+        "xci_path": "ip/top_fft_fwd_4_0/top_fft_fwd_4_0.xci",
+        "inst_hier_path": "fft_fwd_4",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
+      },
+      "fft_inv_4": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_inv_4_0",
+        "xci_path": "ip/top_fft_inv_4_0/top_fft_inv_4_0.xci",
+        "inst_hier_path": "fft_inv_4",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
+      },
+      "fft_fwd_5": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_fwd_5_0",
+        "xci_path": "ip/top_fft_fwd_5_0/top_fft_fwd_5_0.xci",
+        "inst_hier_path": "fft_fwd_5",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
+      },
+      "fft_inv_5": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_inv_5_0",
+        "xci_path": "ip/top_fft_inv_5_0/top_fft_inv_5_0.xci",
+        "inst_hier_path": "fft_inv_5",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
+      },
+      "fft_fwd_6": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_fwd_6_0",
+        "xci_path": "ip/top_fft_fwd_6_0/top_fft_fwd_6_0.xci",
+        "inst_hier_path": "fft_fwd_6",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
+      },
+      "fft_inv_6": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_inv_6_0",
+        "xci_path": "ip/top_fft_inv_6_0/top_fft_inv_6_0.xci",
+        "inst_hier_path": "fft_inv_6",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
+      },
+      "fft_fwd_7": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_fwd_7_0",
+        "xci_path": "ip/top_fft_fwd_7_0/top_fft_fwd_7_0.xci",
+        "inst_hier_path": "fft_fwd_7",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
+      },
+      "fft_inv_7": {
+        "vlnv": "xilinx.com:ip:xfft:9.1",
+        "ip_revision": "13",
+        "xci_name": "top_fft_inv_7_0",
+        "xci_path": "ip/top_fft_inv_7_0/top_fft_inv_7_0.xci",
+        "inst_hier_path": "fft_inv_7",
+        "parameters": {
+          "aclken": {
+            "value": "true"
+          },
+          "aresetn": {
+            "value": "true"
+          },
+          "data_format": {
+            "value": "fixed_point"
+          },
+          "implementation_options": {
+            "value": "pipelined_streaming_io"
+          },
+          "input_width": {
+            "value": "24"
+          },
+          "output_ordering": {
+            "value": "natural_order"
+          },
+          "ovflo": {
+            "value": "false"
+          },
+          "phase_factor_width": {
+            "value": "16"
+          },
+          "rounding_modes": {
+            "value": "convergent_rounding"
+          },
+          "scaling_options": {
+            "value": "unscaled"
+          },
+          "throttle_scheme": {
+            "value": "realtime"
+          },
+          "transform_length": {
+            "value": "256"
+          }
+        }
       }
     },
     "interface_nets": {
@@ -3136,6 +4223,24 @@
         "interface_ports": [
           "axi_dma_0/M_AXIS_MM2S",
           "conv2d_0/video_in"
+        ]
+      },
+      "axi_dma_1_M_AXIS_MM2S": {
+        "interface_ports": [
+          "axi_dma_1/M_AXIS_MM2S",
+          "wiener_0/din"
+        ]
+      },
+      "axi_dma_1_M_AXI_MM2S": {
+        "interface_ports": [
+          "axi_dma_1/M_AXI_MM2S",
+          "axi_smc/S04_AXI"
+        ]
+      },
+      "axi_dma_1_M_AXI_S2MM": {
+        "interface_ports": [
+          "axi_dma_1/M_AXI_S2MM",
+          "axi_smc/S05_AXI"
         ]
       },
       "axi_emc_0_EMC_INTF": {
@@ -3180,6 +4285,18 @@
           "conv2d_0/s_axi_control"
         ]
       },
+      "axi_lite_M02_AXI": {
+        "interface_ports": [
+          "axi_dma_1/S_AXI_LITE",
+          "axi_lite/M02_AXI"
+        ]
+      },
+      "axi_lite_M03_AXI": {
+        "interface_ports": [
+          "wiener_0/s_axi_control",
+          "axi_lite/M03_AXI"
+        ]
+      },
       "axi_smc_M00_AXI": {
         "interface_ports": [
           "axi_smc/M00_AXI",
@@ -3196,6 +4313,102 @@
         "interface_ports": [
           "conv2d_0/video_out",
           "axi_dma_0/S_AXIS_S2MM"
+        ]
+      },
+      "fft_fwd_0_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_fwd_0/M_AXIS_DATA",
+          "wiener_0/fwd_out_0"
+        ]
+      },
+      "fft_fwd_1_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_fwd_1/M_AXIS_DATA",
+          "wiener_0/fwd_out_1"
+        ]
+      },
+      "fft_fwd_2_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_fwd_2/M_AXIS_DATA",
+          "wiener_0/fwd_out_2"
+        ]
+      },
+      "fft_fwd_3_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_fwd_3/M_AXIS_DATA",
+          "wiener_0/fwd_out_3"
+        ]
+      },
+      "fft_fwd_4_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_fwd_4/M_AXIS_DATA",
+          "wiener_0/fwd_out_4"
+        ]
+      },
+      "fft_fwd_5_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_fwd_5/M_AXIS_DATA",
+          "wiener_0/fwd_out_5"
+        ]
+      },
+      "fft_fwd_6_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_fwd_6/M_AXIS_DATA",
+          "wiener_0/fwd_out_6"
+        ]
+      },
+      "fft_fwd_7_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_fwd_7/M_AXIS_DATA",
+          "wiener_0/fwd_out_7"
+        ]
+      },
+      "fft_inv_0_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_inv_0/M_AXIS_DATA",
+          "wiener_0/inv_out_0"
+        ]
+      },
+      "fft_inv_1_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_inv_1/M_AXIS_DATA",
+          "wiener_0/inv_out_1"
+        ]
+      },
+      "fft_inv_2_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_inv_2/M_AXIS_DATA",
+          "wiener_0/inv_out_2"
+        ]
+      },
+      "fft_inv_3_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_inv_3/M_AXIS_DATA",
+          "wiener_0/inv_out_3"
+        ]
+      },
+      "fft_inv_4_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_inv_4/M_AXIS_DATA",
+          "wiener_0/inv_out_4"
+        ]
+      },
+      "fft_inv_5_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_inv_5/M_AXIS_DATA",
+          "wiener_0/inv_out_5"
+        ]
+      },
+      "fft_inv_6_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_inv_6/M_AXIS_DATA",
+          "wiener_0/inv_out_6"
+        ]
+      },
+      "fft_inv_7_M_AXIS_DATA": {
+        "interface_ports": [
+          "fft_inv_7/M_AXIS_DATA",
+          "wiener_0/inv_out_7"
         ]
       },
       "microblaze_0_M_AXI_DC": {
@@ -3324,6 +4537,108 @@
           "axi_dma_0/M_AXI_S2MM"
         ]
       },
+      "wiener_0_dout": {
+        "interface_ports": [
+          "wiener_0/dout",
+          "axi_dma_1/S_AXIS_S2MM"
+        ]
+      },
+      "wiener_0_fwd_in_0": {
+        "interface_ports": [
+          "wiener_0/fwd_in_0",
+          "fft_fwd_0/S_AXIS_DATA"
+        ]
+      },
+      "wiener_0_fwd_in_1": {
+        "interface_ports": [
+          "wiener_0/fwd_in_1",
+          "fft_fwd_1/S_AXIS_DATA"
+        ]
+      },
+      "wiener_0_fwd_in_2": {
+        "interface_ports": [
+          "wiener_0/fwd_in_2",
+          "fft_fwd_2/S_AXIS_DATA"
+        ]
+      },
+      "wiener_0_fwd_in_3": {
+        "interface_ports": [
+          "wiener_0/fwd_in_3",
+          "fft_fwd_3/S_AXIS_DATA"
+        ]
+      },
+      "wiener_0_fwd_in_4": {
+        "interface_ports": [
+          "wiener_0/fwd_in_4",
+          "fft_fwd_4/S_AXIS_DATA"
+        ]
+      },
+      "wiener_0_fwd_in_5": {
+        "interface_ports": [
+          "wiener_0/fwd_in_5",
+          "fft_fwd_5/S_AXIS_DATA"
+        ]
+      },
+      "wiener_0_fwd_in_6": {
+        "interface_ports": [
+          "wiener_0/fwd_in_6",
+          "fft_fwd_6/S_AXIS_DATA"
+        ]
+      },
+      "wiener_0_fwd_in_7": {
+        "interface_ports": [
+          "wiener_0/fwd_in_7",
+          "fft_fwd_7/S_AXIS_DATA"
+        ]
+      },
+      "wiener_0_inv_in_0": {
+        "interface_ports": [
+          "wiener_0/inv_in_0",
+          "fft_inv_0/S_AXIS_DATA"
+        ]
+      },
+      "wiener_0_inv_in_1": {
+        "interface_ports": [
+          "wiener_0/inv_in_1",
+          "fft_inv_1/S_AXIS_DATA"
+        ]
+      },
+      "wiener_0_inv_in_2": {
+        "interface_ports": [
+          "wiener_0/inv_in_2",
+          "fft_inv_2/S_AXIS_DATA"
+        ]
+      },
+      "wiener_0_inv_in_3": {
+        "interface_ports": [
+          "wiener_0/inv_in_3",
+          "fft_inv_3/S_AXIS_DATA"
+        ]
+      },
+      "wiener_0_inv_in_4": {
+        "interface_ports": [
+          "wiener_0/inv_in_4",
+          "fft_inv_4/S_AXIS_DATA"
+        ]
+      },
+      "wiener_0_inv_in_5": {
+        "interface_ports": [
+          "wiener_0/inv_in_5",
+          "fft_inv_5/S_AXIS_DATA"
+        ]
+      },
+      "wiener_0_inv_in_6": {
+        "interface_ports": [
+          "wiener_0/inv_in_6",
+          "fft_inv_6/S_AXIS_DATA"
+        ]
+      },
+      "wiener_0_inv_in_7": {
+        "interface_ports": [
+          "wiener_0/inv_in_7",
+          "fft_inv_7/S_AXIS_DATA"
+        ]
+      },
       "xdma_0_M_AXI": {
         "interface_ports": [
           "xdma_0/M_AXI",
@@ -3372,6 +4687,69 @@
         "ports": [
           "clk_wiz_1/locked",
           "rst_clk_wiz_1_100M/dcm_locked"
+        ]
+      },
+      "const_c0_dout": {
+        "ports": [
+          "const_c0/dout",
+          "fft_fwd_0/s_axis_config_tdata",
+          "fft_fwd_1/s_axis_config_tdata",
+          "fft_fwd_2/s_axis_config_tdata",
+          "fft_fwd_3/s_axis_config_tdata",
+          "fft_fwd_4/s_axis_config_tdata",
+          "fft_fwd_5/s_axis_config_tdata",
+          "fft_fwd_6/s_axis_config_tdata",
+          "fft_fwd_7/s_axis_config_tdata"
+        ]
+      },
+      "const_c1_dout": {
+        "ports": [
+          "const_c1/dout",
+          "fft_inv_0/s_axis_config_tdata",
+          "fft_inv_1/s_axis_config_tdata",
+          "fft_inv_2/s_axis_config_tdata",
+          "fft_inv_3/s_axis_config_tdata",
+          "fft_inv_4/s_axis_config_tdata",
+          "fft_inv_5/s_axis_config_tdata",
+          "fft_inv_6/s_axis_config_tdata",
+          "fft_inv_7/s_axis_config_tdata"
+        ]
+      },
+      "const_one_dout": {
+        "ports": [
+          "const_one/dout",
+          "fft_fwd_0/aclken",
+          "fft_inv_0/aclken",
+          "fft_fwd_0/s_axis_config_tvalid",
+          "fft_inv_0/s_axis_config_tvalid",
+          "fft_fwd_1/aclken",
+          "fft_inv_1/aclken",
+          "fft_fwd_1/s_axis_config_tvalid",
+          "fft_inv_1/s_axis_config_tvalid",
+          "fft_fwd_2/aclken",
+          "fft_inv_2/aclken",
+          "fft_fwd_2/s_axis_config_tvalid",
+          "fft_inv_2/s_axis_config_tvalid",
+          "fft_fwd_3/aclken",
+          "fft_inv_3/aclken",
+          "fft_fwd_3/s_axis_config_tvalid",
+          "fft_inv_3/s_axis_config_tvalid",
+          "fft_fwd_4/aclken",
+          "fft_inv_4/aclken",
+          "fft_fwd_4/s_axis_config_tvalid",
+          "fft_inv_4/s_axis_config_tvalid",
+          "fft_fwd_5/aclken",
+          "fft_inv_5/aclken",
+          "fft_fwd_5/s_axis_config_tvalid",
+          "fft_inv_5/s_axis_config_tvalid",
+          "fft_fwd_6/aclken",
+          "fft_inv_6/aclken",
+          "fft_fwd_6/s_axis_config_tvalid",
+          "fft_inv_6/s_axis_config_tvalid",
+          "fft_fwd_7/aclken",
+          "fft_inv_7/aclken",
+          "fft_fwd_7/s_axis_config_tvalid",
+          "fft_inv_7/s_axis_config_tvalid"
         ]
       },
       "default_50mhz_clk0_1": {
@@ -3554,7 +4932,29 @@
           "axi_lite/M00_ACLK",
           "axi_lite/M01_ACLK",
           "axi_lite/S00_ACLK",
-          "conv2d_0/ap_clk"
+          "conv2d_0/ap_clk",
+          "axi_dma_1/s_axi_lite_aclk",
+          "axi_dma_1/m_axi_mm2s_aclk",
+          "axi_dma_1/m_axi_s2mm_aclk",
+          "wiener_0/ap_clk",
+          "axi_lite/M02_ACLK",
+          "axi_lite/M03_ACLK",
+          "fft_fwd_0/aclk",
+          "fft_inv_0/aclk",
+          "fft_fwd_1/aclk",
+          "fft_inv_1/aclk",
+          "fft_fwd_2/aclk",
+          "fft_inv_2/aclk",
+          "fft_fwd_3/aclk",
+          "fft_inv_3/aclk",
+          "fft_fwd_4/aclk",
+          "fft_inv_4/aclk",
+          "fft_fwd_5/aclk",
+          "fft_inv_5/aclk",
+          "fft_fwd_6/aclk",
+          "fft_inv_6/aclk",
+          "fft_fwd_7/aclk",
+          "fft_inv_7/aclk"
         ]
       },
       "xdma_0_axi_aresetn": {
@@ -3566,7 +4966,27 @@
           "axi_lite/M00_ARESETN",
           "axi_lite/M01_ARESETN",
           "axi_lite/S00_ARESETN",
-          "conv2d_0/ap_rst_n"
+          "conv2d_0/ap_rst_n",
+          "axi_dma_1/axi_resetn",
+          "wiener_0/ap_rst_n",
+          "axi_lite/M02_ARESETN",
+          "axi_lite/M03_ARESETN",
+          "fft_fwd_0/aresetn",
+          "fft_inv_0/aresetn",
+          "fft_fwd_1/aresetn",
+          "fft_inv_1/aresetn",
+          "fft_fwd_2/aresetn",
+          "fft_inv_2/aresetn",
+          "fft_fwd_3/aresetn",
+          "fft_inv_3/aresetn",
+          "fft_fwd_4/aresetn",
+          "fft_inv_4/aresetn",
+          "fft_fwd_5/aresetn",
+          "fft_inv_5/aresetn",
+          "fft_fwd_6/aresetn",
+          "fft_inv_6/aresetn",
+          "fft_fwd_7/aresetn",
+          "fft_inv_7/aresetn"
         ]
       }
     },
@@ -3678,10 +5098,22 @@
                 "offset": "0x00000000",
                 "range": "4K"
               },
+              "SEG_axi_dma_1_Reg": {
+                "address_block": "/axi_dma_1/S_AXI_LITE/Reg",
+                "offset": "0x41E00000",
+                "range": "64K"
+              },
               "SEG_conv2d_0_Reg": {
                 "address_block": "/conv2d_0/s_axi_control/Reg",
                 "offset": "0x00001000",
                 "range": "4K",
+                "offset_base_param": "C_S_AXI_CONTROL_BASEADDR",
+                "offset_high_param": "C_S_AXI_CONTROL_HIGHADDR"
+              },
+              "SEG_wiener_0_Reg": {
+                "address_block": "/wiener_0/s_axi_control/Reg",
+                "offset": "0x00010000",
+                "range": "64K",
                 "offset_base_param": "C_S_AXI_CONTROL_BASEADDR",
                 "offset_high_param": "C_S_AXI_CONTROL_HIGHADDR"
               }
