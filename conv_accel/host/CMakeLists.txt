@@ -8,7 +8,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 add_compile_options(-Wall -Wextra)
 
-find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs highgui videoio)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs highgui videoio features2d calib3d video)
 
 # --- platform library -------------------------------------------------------
 add_library(accel STATIC
@@ -33,6 +33,9 @@ target_link_libraries(conv_demo PRIVATE accel)
 
 add_executable(deblur_demo apps/deblur_demo.cpp)
 target_link_libraries(deblur_demo PRIVATE accel)
+
+add_executable(deblur_video apps/deblur_video.cpp)
+target_link_libraries(deblur_video PRIVATE accel)
 
 # low-level DDR3 round-trip test (no OpenCV needed)
 add_executable(dma_pattern tests/dma_pattern.c)
