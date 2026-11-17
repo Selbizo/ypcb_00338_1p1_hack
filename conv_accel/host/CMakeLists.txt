@@ -18,6 +18,8 @@ add_library(accel STATIC
     src/axidma.cpp
     src/conv2d.cpp
     src/filters.cpp
+    src/deblur.cpp
+    src/deblur_fpga.cpp
 )
 target_include_directories(accel PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -28,6 +30,9 @@ target_link_libraries(accel PUBLIC ${OpenCV_LIBS})
 # --- applications -----------------------------------------------------------
 add_executable(conv_demo apps/conv_demo.cpp)
 target_link_libraries(conv_demo PRIVATE accel)
+
+add_executable(deblur_demo apps/deblur_demo.cpp)
+target_link_libraries(deblur_demo PRIVATE accel)
 
 # low-level DDR3 round-trip test (no OpenCV needed)
 add_executable(dma_pattern tests/dma_pattern.c)
