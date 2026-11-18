@@ -20,6 +20,7 @@ add_library(accel STATIC
     src/filters.cpp
     src/deblur.cpp
     src/deblur_fpga.cpp
+    src/deblur_cpu.cpp
 )
 target_include_directories(accel PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
