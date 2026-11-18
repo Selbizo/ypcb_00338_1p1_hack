@@ -8,7 +8,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 add_compile_options(-Wall -Wextra)
 
-find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs highgui videoio features2d calib3d video)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs highgui videoio features2d calib3d video cudaarithm cudaimgproc)
 
 # --- platform library -------------------------------------------------------
 add_library(accel STATIC
@@ -22,6 +22,7 @@ add_library(accel STATIC
     src/deblur_fpga.cpp
     src/deblur_cpu.cpp
     src/deblur_ocl.cpp
+    src/deblur_cuda.cpp
 )
 target_include_directories(accel PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
