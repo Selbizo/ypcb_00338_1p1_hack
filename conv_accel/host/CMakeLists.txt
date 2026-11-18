@@ -21,6 +21,7 @@ add_library(accel STATIC
     src/deblur.cpp
     src/deblur_fpga.cpp
     src/deblur_cpu.cpp
+    src/deblur_ocl.cpp
 )
 target_include_directories(accel PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include

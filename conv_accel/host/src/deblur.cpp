@@ -11,6 +11,7 @@ namespace deblur {
 
 std::unique_ptr<Engine> makeFpgaEngine();
 std::unique_ptr<Engine> makeCpuEngine();
+std::unique_ptr<Engine> makeOclEngine();
 
 bool Engine::available(Backend b) {
     switch (b) {
@@ -32,6 +33,7 @@ std::unique_ptr<Engine> Engine::create(Backend backend, const std::string&) {
     }
     switch (backend) {
         case Backend::CPU:  return makeCpuEngine();
+        case Backend::OpenCL: return makeOclEngine();
         case Backend::FPGA: return makeFpgaEngine();
         default: throw std::runtime_error("deblur: backend not implemented yet");
     }
