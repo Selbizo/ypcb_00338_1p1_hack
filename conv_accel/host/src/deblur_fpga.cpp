@@ -24,7 +24,7 @@ namespace deblur {
 namespace {
 
 constexpr uint32_t kDmaBase    = 0x2000;  // AXI DMA #1 (user BAR offset)
-constexpr uint32_t kKernelBase = 0x3000;  // wiener s_axilite
+constexpr uint32_t kKernelBase = 0x4000;  // wiener s_axilite (8 KB window)
 constexpr uint32_t kParamsOff  = 0x1000;  // params[3][256] inside s_axilite
 constexpr uint64_t kInAddr     = 0x10000000ull;
 constexpr uint64_t kOutAddr    = 0x20000000ull;
@@ -32,10 +32,13 @@ constexpr int kBlock = 256;
 constexpr int kHop   = 128;
 constexpr int kMaxBlocks = 256;
 
-inline void wr_float(accel::UserBar& bar, uint32_t off, float v) {
-    uint32_t u;
-    std::memcpy(&u, &v, sizeof(u));
-    bar.wr(off, u);
+// Q1.15 packing: the kernel takes the low 16 bits of each 32-bit word and
+// reinterprets them as ap_fixed<16,1> (no float IP inside the kernel).
+inline uint32_t q15(float v) {
+    float x = v * 32768.0f;
+    if (x > 32767.0f) x = 32767.0f;
+    if (x < -32768.0f) x = -32768.0f;
+    return static_cast<uint32_t>(static_cast<int32_t>(std::lrintf(x)));
 }
 
 }  // namespace
@@ -74,7 +77,7 @@ public:
         xdma_.write(kInAddr, in.data(), bytes);
 
         // per-block G parameters: (L/N, cos theta, sin theta)
-        std::vector<float> params(3 * kMaxBlocks, 0.0f);
+        std::vector<uint32_t> params(3 * kMaxBlocks, 0u);
         const float cx = 0.5f * W, cy = 0.5f * H;
         const float Tx = p.exposure * p.dx;
         const float Ty = p.exposure * p.dy;
@@ -90,9 +93,9 @@ public:
             const float L = std::hypot(sx, sy);
             const float th = std::atan2(sy, sx);
             if (idx >= kMaxBlocks) throw std::runtime_error("deblur: too many blocks");
-            params[0 * kMaxBlocks + idx] = L / static_cast<float>(kBlock);
-            params[1 * kMaxBlocks + idx] = std::cos(th);
-            params[2 * kMaxBlocks + idx] = std::sin(th);
+            params[0 * kMaxBlocks + idx] = q15(L / static_cast<float>(kBlock));
+            params[1 * kMaxBlocks + idx] = q15(std::cos(th));
+            params[2 * kMaxBlocks + idx] = q15(std::sin(th));
             ++idx;
         };
 
@@ -103,7 +106,7 @@ public:
             for (int vx = 0; vx <= W - kHop; vx += kHop) add_block(last_vy, vx);
 
         for (int i = 0; i < 3 * kMaxBlocks; ++i)
-            wr_float(bar_, kKernelBase + kParamsOff + 4u * i, params[i]);
+            bar_.wr(kKernelBase + kParamsOff + 4u * i, params[i]);
         bar_.wr(kKernelBase + 0x10, static_cast<uint32_t>(W));  // width
         bar_.wr(kKernelBase + 0x18, static_cast<uint32_t>(H));  // height
         bar_.wr(kKernelBase, 1u);                               // ap_start

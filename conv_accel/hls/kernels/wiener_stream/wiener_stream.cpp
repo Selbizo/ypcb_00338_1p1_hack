@@ -193,7 +193,8 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
                    hls::stream<axis_in_t> inv_in[8], hls::stream<axis_out_t> inv_out[8],
                    hls::stream<axis_frame_t> &din, hls::stream<axis_frame_t> &dout,
                    int width, int height,
-                   float params[3][256]) {
+                   ap_int<32> params[3][256],
+                   int dbg[16]) {
 #pragma HLS interface axis port=fwd_in
 #pragma HLS interface axis port=fwd_out
 #pragma HLS interface axis port=inv_in
@@ -203,6 +204,7 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
 #pragma HLS interface s_axilite port=width
 #pragma HLS interface s_axilite port=height
 #pragma HLS interface s_axilite port=params
+#pragma HLS interface s_axilite port=dbg
 #pragma HLS interface s_axilite port=return
 
     static cplx_t A[N/8][N/8][8][8];
@@ -227,6 +229,7 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
         if (by > height - N) by = height - N;
         int oy = vy - by;
 
+        dbg[0] = 20 + vy / 128;   // entered block row
         // fill the strip up to by+255
         while (read_row <= by + N - 1) {
             for (int c = 0; c < width; ++c) {
@@ -243,6 +246,7 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
             if (bx > width - N) bx = width - N;
             int ox = vx - bx;
 
+            dbg[1] = 30;
             // load block from the strip (8 rows / cycle)
             for (int r0 = 0; r0 < N; r0 += 8)
                 for (int c = 0; c < N; ++c) {
@@ -256,16 +260,23 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
                     }
                 }
 
-            q15_t Lnq = params[0][idx];
-            q15_t ctq = params[1][idx];
-            q15_t stq = params[2][idx];
+            dbg[2] = 40;
+            q15_t Lnq, ctq, stq;
+            Lnq.range(15, 0) = params[0][idx].range(15, 0);
+            ctq.range(15, 0) = params[1][idx].range(15, 0);
+            stq.range(15, 0) = params[2][idx].range(15, 0);
             idx++;
 
+            dbg[3] = 50;
             row_pass(A, B, fwd_in, fwd_out);
+            dbg[4] = 60;
             col_pass(B, A, fwd_in, fwd_out, inv_in, inv_out, Lnq, ctq, stq);
+            dbg[5] = 70;
             inv_rows(A, inv_in, inv_out, outst, ox, oy, vx, width);
+            dbg[6] = 80;
         }
 
+        dbg[7] = 90;
         // emit the 128 valid rows
         for (int j = 0; j < 128; ++j)
             for (int c = 0; c < width; ++c) {
@@ -275,6 +286,7 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
                 o.last = (c == width-1) && (j == 127) && (vy == last_vy);
                 dout.write(o);
             }
+        dbg[8] = 91;
     }
 
     if (!done_last) {
@@ -307,9 +319,10 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
                             cplx_t(sample_t(yv - 128) / 256, sample_t(0));
                     }
                 }
-            q15_t Lnq = params[0][idx];
-            q15_t ctq = params[1][idx];
-            q15_t stq = params[2][idx];
+            q15_t Lnq, ctq, stq;
+            Lnq.range(15, 0) = params[0][idx].range(15, 0);
+            ctq.range(15, 0) = params[1][idx].range(15, 0);
+            stq.range(15, 0) = params[2][idx].range(15, 0);
             idx++;
             row_pass(A, B, fwd_in, fwd_out);
             col_pass(B, A, fwd_in, fwd_out, inv_in, inv_out, Lnq, ctq, stq);
@@ -324,4 +337,5 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
                 dout.write(o);
             }
     }
+    dbg[9] = 99;
 }
