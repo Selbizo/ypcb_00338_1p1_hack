@@ -116,7 +116,9 @@ def main() -> int:
         time.sleep(0.05)
 
     print(f"kernel regs: width={rd(KRN+0x10)} height={rd(KRN+0x18)} ctrl=0x{rd(KRN):08X}")
-    print("dbg[]:", [rd(KRN + 0x40 + 4 * i) for i in range(10)])
+    dvals = [rd(KRN + 0x40 + 4 * i) for i in range(10)]
+    print("dbg[]:", dvals)
+    print("dbg stages:", [v // 256 for v in dvals])
     with open(C2H, "rb", buffering=0) as f:
         f.seek(OUT_ADDR)
         out = f.read(rx_bytes)

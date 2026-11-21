@@ -241,12 +241,14 @@ static void block_wiener(cplx_t A[N/8][N/8][8][8], cplx_t B[N/8][N/8][8][8],
 // ---------------- top ----------------
 void wiener_stream(hls::stream<axis_frame_t> &din, hls::stream<axis_frame_t> &dout,
                    int width, int height,
-                   ap_int<32> params[3][256]) {
+                   ap_int<32> params[3][256],
+                   int dbg[16]) {
 #pragma HLS interface axis port=din
 #pragma HLS interface axis port=dout
 #pragma HLS interface s_axilite port=width
 #pragma HLS interface s_axilite port=height
 #pragma HLS interface s_axilite port=params
+#pragma HLS interface s_axilite port=dbg
 #pragma HLS interface s_axilite port=return
 
     static cplx_t A[N/8][N/8][8][8];
@@ -271,6 +273,7 @@ void wiener_stream(hls::stream<axis_frame_t> &din, hls::stream<axis_frame_t> &do
         if (by > height - N) by = height - N;
         int oy = vy - by;
 
+        dbg[0] = 20 * 256;
         while (read_row <= by + N - 1) {
             for (int c = 0; c < width; ++c) {
 #pragma HLS pipeline II=1
@@ -279,6 +282,7 @@ void wiener_stream(hls::stream<axis_frame_t> &din, hls::stream<axis_frame_t> &do
             }
             read_row++;
         }
+        dbg[1] = 30 * 256 + ((int)strip[0][0] & 0xFF);
 
         for (int vx = 0; vx <= width - 128; vx += 128) {
             int bx = vx - 64;
@@ -297,6 +301,7 @@ void wiener_stream(hls::stream<axis_frame_t> &din, hls::stream<axis_frame_t> &do
                             cplx_t(sample_t(yv - 128) / 256, sample_t(0));
                     }
                 }
+            dbg[2] = 40 * 256 + ((int)A[0][0][0][0].real() & 0xFF);
 
             q15_t Lnq, ctq, stq;
             Lnq.range(15, 0) = params[0][idx].range(15, 0);
@@ -305,7 +310,9 @@ void wiener_stream(hls::stream<axis_frame_t> &din, hls::stream<axis_frame_t> &do
             idx++;
 
             block_wiener(A, B, Lnq, ctq, stq, outst, ox, oy, vx);
+            dbg[3] = 50 * 256 + ((int)outst[0][0] & 0xFF);
         }
+        dbg[4] = 60 * 256;
 
         for (int j = 0; j < 128; ++j)
             for (int c = 0; c < width; ++c) {
@@ -317,6 +324,7 @@ void wiener_stream(hls::stream<axis_frame_t> &din, hls::stream<axis_frame_t> &do
                 o.last = (c == width-1) && (j == 127) && (vy == last_vy);
                 dout.write(o);
             }
+        dbg[5] = 70 * 256;
     }
 
     if (!done_last) {
