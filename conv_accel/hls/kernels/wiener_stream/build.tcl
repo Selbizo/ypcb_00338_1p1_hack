@@ -2,14 +2,17 @@ set here  [file normalize [file dirname [info script]]]
 set root  [file normalize "$here/../../.."]
 set ipout "$root/hw/ip_repo"
 set work  "/tmp/conv_accel_hls/wiener_stream"
+set hdr   "/mnt/tools/Xilinx/Vitis/2024.2/common/technology/autopilot/hls_fft.h"
 file delete -force $work
 file mkdir $work
 file copy -force "$here/wiener_stream.cpp" "$work/wiener_stream.cpp"
 file copy -force "$here/g_lut.h" "$work/g_lut.h"
+file copy -force $hdr "$work/hls_fft_rt.h"
+exec sed -i {s/"nonrealtime"/"realtime"/g} "$work/hls_fft_rt.h"
 cd $work
 open_project -reset "$work/ws_prj"
 set_top wiener_stream
-add_files wiener_stream.cpp -cflags "-I$work -DN=256 -std=c++14"
+add_files wiener_stream.cpp -cflags "-I$work -DN=256 -DLOGN=8 -std=c++14"
 open_solution -reset solution1 -flow_target vivado
 set_part xc7k480tffg1156-2
 create_clock -period 4.000 -name default

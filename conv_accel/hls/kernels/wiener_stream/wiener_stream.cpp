@@ -1,22 +1,25 @@
-// Y-plane Wiener deconvolution over a full frame using 8 forward + 8 inverse
-// external xfft IPs (AXI-Stream, 1 sample/clock).  Luma only: the host sends
-// Y and merges the result back with the original chroma.
-//
-// Frame: width x height, block 256, hop 128 (50% overlap, valid = central 128).
-// A 256-row strip buffer holds the current block rows; the frame is read once.
+// Y-plane Wiener deconvolution over a full frame.
+// 256x256 blocks, hop 128, per-block analytic sinc OTF, 8 parallel streaming
+// hls::fft cores (the interface that synthesises cleanly), Y only.
 #include <ap_fixed.h>
 #include <ap_axi_sdata.h>
 #include <hls_stream.h>
 #include <complex>
 #include <hls_math.h>
+#include "hls_fft_rt.h"
 #include "g_lut.h"
 
 #ifndef N
 #define N 256
 #endif
+#ifndef LOGN
+#define LOGN 8
+#endif
+#define PAR 8
+#define FRAMES (N / PAR)
 #define W_MAX 1920
 #define IN_W 24
-#define OUT_W (IN_W + 8 + 1)
+#define OUT_W (IN_W + LOGN + 1)
 #define WIDE_W (((OUT_W + 7) / 8) * 8)
 #define WIDE_I (WIDE_W - IN_W + 1)
 
@@ -26,26 +29,41 @@ typedef ap_fixed<WIDE_W, WIDE_I> wide_t;
 typedef std::complex<wide_t> cplx_w_t;
 typedef ap_fixed<16, 1> q15_t;
 
-typedef ap_axis<48, 0, 0, 0> axis_in_t;
-typedef ap_axis<80, 0, 0, 0> axis_out_t;
 typedef ap_axis<32, 0, 0, 0> axis_frame_t;
 
-// ---------------- bit packing / fixed point ----------------
-static ap_uint<48> pack(sample_t re, sample_t im) {
-    ap_uint<48> d;
-    d.range(23, 0)  = re.range(23, 0).to_uint64();
-    d.range(47, 24) = im.range(23, 0).to_uint64();
-    return d;
+// ---------------- FFT config (unscaled, realtime, 8 parallel cores) --------
+struct fft_cfg : hls::ip_fft::params_t {
+    static const unsigned max_nfft           = LOGN;
+    static const unsigned config_width       = 8;
+    static const unsigned input_width        = IN_W;
+    static const unsigned output_width       = OUT_W;
+    static const unsigned phase_factor_width = 16;
+    static const unsigned ordering_opt       = hls::ip_fft::natural_order;
+    static const unsigned scaling_opt        = hls::ip_fft::unscaled;
+    static const unsigned rounding_opt       = hls::ip_fft::convergent_rounding;
+    static const unsigned arch_opt           = hls::ip_fft::pipelined_streaming_io;
+};
+typedef hls::ip_fft::config_t<fft_cfg> cfg_t;
+typedef hls::ip_fft::status_t<fft_cfg> st_t;
+
+static void fft_core(hls::stream<cplx_t> &in, hls::stream<cplx_w_t> &out,
+                     int n, int dir) {
+#pragma HLS inline off
+    for (int i = 0; i < n; ++i) {
+        hls::stream<cfg_t> cfg;
+        hls::stream<st_t> st;
+        cfg_t c;
+        c.setDir(dir != 0);
+        cfg.write(c);
+        hls::fft<fft_cfg>(in, out, st, cfg);
+        // no st.read(): unscaled / ovflo=false core emits no status word
+    }
 }
-static cplx_w_t unpack(ap_uint<80> d) {
-    wide_t re, im;
-    re.range(39, 0) = d.range(39, 0).to_uint64();
-    im.range(39, 0) = d.range(79, 40).to_uint64();
-    return cplx_w_t(re, im);
-}
+
 static cplx_t narrow(cplx_w_t v, int s) {
     return cplx_t(sample_t(v.real() >> s), sample_t(v.imag() >> s));
 }
+
 static cplx_t cmul(cplx_t a, cplx_t b) {
     return cplx_t(a.real()*b.real() - a.imag()*b.imag(),
                   a.real()*b.imag() + a.imag()*b.real());
@@ -76,135 +94,159 @@ static cplx_t gbin_lut(int kx, int ky, q15_t Ln, q15_t ct, q15_t st) {
     return cplx_t(sr, si);
 }
 
-// ---------------- 8-core streaming passes ----------------
-static void send_rows(cplx_t A[N/8][N/8][8][8], hls::stream<axis_in_t> out[8]) {
-    for (int r0 = 0; r0 < N; r0 += 8)
+// ---------------- streaming helpers ----------------
+static void load_rows(cplx_t A[N/8][N/8][8][8], hls::stream<cplx_t> in[PAR]) {
+    for (int r0 = 0; r0 < N; r0 += PAR)
         for (int c = 0; c < N; ++c) {
 #pragma HLS pipeline II=1
-            for (int p = 0; p < 8; ++p) {
+            for (int p = 0; p < PAR; ++p) {
 #pragma HLS unroll
-                cplx_t v = A[(r0+p)/8][c/8][(r0+p)%8][c%8];
-                axis_in_t x; x.data = pack(v.real(), v.imag()); x.last = (c == N-1);
-                out[p].write(x);
+                in[p].write(A[(r0+p)/8][c/8][(r0+p)%8][c%8]);
             }
         }
-}
-static void recv_rows(hls::stream<axis_out_t> in[8], cplx_t B[N/8][N/8][8][8]) {
-    for (int r0 = 0; r0 < N; r0 += 8)
-        for (int c = 0; c < N; ++c) {
-#pragma HLS pipeline II=1
-            for (int p = 0; p < 8; ++p) {
-#pragma HLS unroll
-                axis_out_t y = in[p].read();
-                B[c/8][(r0+p)/8][c%8][(r0+p)%8] = narrow(unpack(y.data), 8);
-            }
-        }
-}
-static void row_pass(cplx_t A[N/8][N/8][8][8], cplx_t B[N/8][N/8][8][8],
-                     hls::stream<axis_in_t> fin[8], hls::stream<axis_out_t> fout[8]) {
-#pragma HLS dataflow
-    send_rows(A, fin);
-    recv_rows(fout, B);
-}
-static void send_cols(cplx_t B[N/8][N/8][8][8], hls::stream<axis_in_t> out[8]) {
-    for (int c0 = 0; c0 < N; c0 += 8)
-        for (int r = 0; r < N; ++r) {
-#pragma HLS pipeline II=1
-            for (int p = 0; p < 8; ++p) {
-#pragma HLS unroll
-                cplx_t v = B[(c0+p)/8][r/8][(c0+p)%8][r%8];
-                axis_in_t x; x.data = pack(v.real(), v.imag()); x.last = (r == N-1);
-                out[p].write(x);
-            }
-        }
-}
-static void recv_cols_g(hls::stream<axis_out_t> in[8], hls::stream<axis_in_t> out[8],
-                        q15_t Ln, q15_t ct, q15_t st) {
-    for (int c0 = 0; c0 < N; c0 += 8)
-        for (int r = 0; r < N; ++r) {
-#pragma HLS pipeline II=1
-            for (int p = 0; p < 8; ++p) {
-#pragma HLS unroll
-                axis_out_t y = in[p].read();
-                cplx_t v = narrow(unpack(y.data), 8);
-                cplx_t z = cmul(v, gbin_lut(c0+p, r, Ln, ct, st));
-                axis_in_t x; x.data = pack(z.real(), z.imag()); x.last = (r == N-1);
-                out[p].write(x);
-            }
-        }
-}
-static void recv_cols(hls::stream<axis_out_t> in[8], cplx_t A[N/8][N/8][8][8]) {
-    for (int c0 = 0; c0 < N; c0 += 8)
-        for (int r = 0; r < N; ++r) {
-#pragma HLS pipeline II=1
-            for (int p = 0; p < 8; ++p) {
-#pragma HLS unroll
-                axis_out_t y = in[p].read();
-                A[r/8][(c0+p)/8][r%8][(c0+p)%8] = narrow(unpack(y.data), 4);
-            }
-        }
-}
-static void col_pass(cplx_t B[N/8][N/8][8][8], cplx_t A[N/8][N/8][8][8],
-                     hls::stream<axis_in_t> fin[8], hls::stream<axis_out_t> fout[8],
-                     hls::stream<axis_in_t> iin[8], hls::stream<axis_out_t> iout[8],
-                     q15_t Ln, q15_t ct, q15_t st) {
-#pragma HLS dataflow
-    send_cols(B, fin);
-    recv_cols_g(fout, iin, Ln, ct, st);
-    recv_cols(iout, A);
 }
 
-// ---------------- inverse rows -> valid 128x128 tile into the strip ----------------
-static void inv_rows(cplx_t A[N/8][N/8][8][8],
-                     hls::stream<axis_in_t> fin[8], hls::stream<axis_out_t> fout[8],
-                     ap_uint<8> outst[128][W_MAX],
-                     int ox, int oy, int vx, int width) {
-    send_rows(A, fin);
-    for (int r0 = 0; r0 < N; r0 += 8) {
-        cplx_t rowbuf[8][N];
-#pragma HLS array_partition variable=rowbuf complete dim=1
+static void store_rows(hls::stream<cplx_w_t> out[PAR], cplx_t B[N/8][N/8][8][8]) {
+    for (int r0 = 0; r0 < N; r0 += PAR)
         for (int c = 0; c < N; ++c) {
 #pragma HLS pipeline II=1
-            for (int p = 0; p < 8; ++p) {
+            for (int p = 0; p < PAR; ++p) {
 #pragma HLS unroll
-                axis_out_t y = fout[p].read();
-                rowbuf[p][c] = cplx_t(sample_t(unpack(y.data).real() >> 4),
-                                      sample_t(unpack(y.data).imag() >> 4));
+                B[c/8][(r0+p)/8][c%8][(r0+p)%8] = narrow(out[p].read(), 8);
             }
         }
-        for (int c = ox; c < ox + 128; ++c) {
+}
+
+static void load_cols(cplx_t B[N/8][N/8][8][8], hls::stream<cplx_t> in[PAR]) {
+    for (int c0 = 0; c0 < N; c0 += PAR)
+        for (int r = 0; r < N; ++r) {
 #pragma HLS pipeline II=1
-            for (int p = 0; p < 8; ++p) {
+            for (int p = 0; p < PAR; ++p) {
+#pragma HLS unroll
+                in[p].write(B[(c0+p)/8][r/8][(c0+p)%8][r%8]);
+            }
+        }
+}
+
+static void apply_g(hls::stream<cplx_w_t> in[PAR], hls::stream<cplx_t> out[PAR],
+                    q15_t Ln, q15_t ct, q15_t st) {
+    for (int c0 = 0; c0 < N; c0 += PAR)
+        for (int r = 0; r < N; ++r) {
+#pragma HLS pipeline II=1
+            for (int p = 0; p < PAR; ++p) {
+#pragma HLS unroll
+                cplx_t v = narrow(in[p].read(), 8);
+                out[p].write(cmul(v, gbin_lut(c0+p, r, Ln, ct, st)));
+            }
+        }
+}
+
+static void store_cols(hls::stream<cplx_w_t> out[PAR], cplx_t A[N/8][N/8][8][8]) {
+    for (int c0 = 0; c0 < N; c0 += PAR)
+        for (int r = 0; r < N; ++r) {
+#pragma HLS pipeline II=1
+            for (int p = 0; p < PAR; ++p) {
+#pragma HLS unroll
+                A[r/8][(c0+p)/8][r%8][(c0+p)%8] = narrow(out[p].read(), 4);
+            }
+        }
+}
+
+static void load_rows2(cplx_t A[N/8][N/8][8][8], hls::stream<cplx_t> in[PAR]) {
+    load_rows(A, in);
+}
+
+static void store_tile(hls::stream<cplx_w_t> out[PAR], ap_uint<8> outst[128][W_MAX],
+                       int ox, int oy, int vx) {
+    for (int r0 = 0; r0 < N; r0 += PAR)
+        for (int c = 0; c < N; ++c) {
+#pragma HLS pipeline II=1
+            for (int p = 0; p < PAR; ++p) {
 #pragma HLS unroll
                 int r = r0 + p;
-                if (r >= oy && r < oy + 128) {
-                    int v = (int)(rowbuf[p][c].real() * 1280) + 128;
+                sample_t val = narrow(out[p].read(), 4).real();
+                if (r >= oy && r < oy + 128 && c >= ox && c < ox + 128) {
+                    int v = (int)(val * 1280) + 128;
                     if (v < 0) v = 0;
                     if (v > 255) v = 255;
-                    outst[r-oy][vx + c - ox] = (ap_uint<8>)v;
+                    outst[r - oy][vx + c - ox] = (ap_uint<8>)v;
                 }
             }
         }
+}
+
+// ---------------- one 256x256 block 2D Wiener ----------------
+static void block_wiener(cplx_t A[N/8][N/8][8][8], cplx_t B[N/8][N/8][8][8],
+                         q15_t Ln, q15_t ct, q15_t st,
+                         ap_uint<8> outst[128][W_MAX],
+                         int ox, int oy, int vx) {
+    {
+#pragma HLS dataflow
+        hls::stream<cplx_t>   fin[PAR];
+        hls::stream<cplx_w_t> fout[PAR];
+        load_rows(A, fin);
+        fft_core(fin[0], fout[0], FRAMES, 1);
+        fft_core(fin[1], fout[1], FRAMES, 1);
+        fft_core(fin[2], fout[2], FRAMES, 1);
+        fft_core(fin[3], fout[3], FRAMES, 1);
+        fft_core(fin[4], fout[4], FRAMES, 1);
+        fft_core(fin[5], fout[5], FRAMES, 1);
+        fft_core(fin[6], fout[6], FRAMES, 1);
+        fft_core(fin[7], fout[7], FRAMES, 1);
+        store_rows(fout, B);
+    }
+    {
+#pragma HLS dataflow
+        hls::stream<cplx_t>   cin[PAR];
+        hls::stream<cplx_w_t> cout_f[PAR];
+        hls::stream<cplx_t>   cinv[PAR];
+        hls::stream<cplx_w_t> cout_i[PAR];
+        load_cols(B, cin);
+        fft_core(cin[0], cout_f[0], FRAMES, 1);
+        fft_core(cin[1], cout_f[1], FRAMES, 1);
+        fft_core(cin[2], cout_f[2], FRAMES, 1);
+        fft_core(cin[3], cout_f[3], FRAMES, 1);
+        fft_core(cin[4], cout_f[4], FRAMES, 1);
+        fft_core(cin[5], cout_f[5], FRAMES, 1);
+        fft_core(cin[6], cout_f[6], FRAMES, 1);
+        fft_core(cin[7], cout_f[7], FRAMES, 1);
+        apply_g(cout_f, cinv, Ln, ct, st);
+        fft_core(cinv[0], cout_i[0], FRAMES, 0);
+        fft_core(cinv[1], cout_i[1], FRAMES, 0);
+        fft_core(cinv[2], cout_i[2], FRAMES, 0);
+        fft_core(cinv[3], cout_i[3], FRAMES, 0);
+        fft_core(cinv[4], cout_i[4], FRAMES, 0);
+        fft_core(cinv[5], cout_i[5], FRAMES, 0);
+        fft_core(cinv[6], cout_i[6], FRAMES, 0);
+        fft_core(cinv[7], cout_i[7], FRAMES, 0);
+        store_cols(cout_i, A);
+    }
+    {
+#pragma HLS dataflow
+        hls::stream<cplx_t>   iin[PAR];
+        hls::stream<cplx_w_t> iout[PAR];
+        load_rows2(A, iin);
+        fft_core(iin[0], iout[0], FRAMES, 0);
+        fft_core(iin[1], iout[1], FRAMES, 0);
+        fft_core(iin[2], iout[2], FRAMES, 0);
+        fft_core(iin[3], iout[3], FRAMES, 0);
+        fft_core(iin[4], iout[4], FRAMES, 0);
+        fft_core(iin[5], iout[5], FRAMES, 0);
+        fft_core(iin[6], iout[6], FRAMES, 0);
+        fft_core(iin[7], iout[7], FRAMES, 0);
+        store_tile(iout, outst, ox, oy, vx);
     }
 }
 
 // ---------------- top ----------------
-void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd_out[8],
-                   hls::stream<axis_in_t> inv_in[8], hls::stream<axis_out_t> inv_out[8],
-                   hls::stream<axis_frame_t> &din, hls::stream<axis_frame_t> &dout,
+void wiener_stream(hls::stream<axis_frame_t> &din, hls::stream<axis_frame_t> &dout,
                    int width, int height,
-                   ap_int<32> params[3][256],
-                   int dbg[16]) {
-#pragma HLS interface axis port=fwd_in
-#pragma HLS interface axis port=fwd_out
-#pragma HLS interface axis port=inv_in
-#pragma HLS interface axis port=inv_out
+                   ap_int<32> params[3][256]) {
 #pragma HLS interface axis port=din
 #pragma HLS interface axis port=dout
 #pragma HLS interface s_axilite port=width
 #pragma HLS interface s_axilite port=height
 #pragma HLS interface s_axilite port=params
-#pragma HLS interface s_axilite port=dbg
 #pragma HLS interface s_axilite port=return
 
     static cplx_t A[N/8][N/8][8][8];
@@ -229,8 +271,6 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
         if (by > height - N) by = height - N;
         int oy = vy - by;
 
-        dbg[0] = 20 + vy / 128;   // entered block row
-        // fill the strip up to by+255
         while (read_row <= by + N - 1) {
             for (int c = 0; c < width; ++c) {
 #pragma HLS pipeline II=1
@@ -246,8 +286,6 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
             if (bx > width - N) bx = width - N;
             int ox = vx - bx;
 
-            dbg[1] = 30;
-            // load block from the strip (8 rows / cycle)
             for (int r0 = 0; r0 < N; r0 += 8)
                 for (int c = 0; c < N; ++c) {
 #pragma HLS pipeline II=1
@@ -260,33 +298,25 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
                     }
                 }
 
-            dbg[2] = 40;
             q15_t Lnq, ctq, stq;
             Lnq.range(15, 0) = params[0][idx].range(15, 0);
             ctq.range(15, 0) = params[1][idx].range(15, 0);
             stq.range(15, 0) = params[2][idx].range(15, 0);
             idx++;
 
-            dbg[3] = 50;
-            row_pass(A, B, fwd_in, fwd_out);
-            dbg[4] = 60;
-            col_pass(B, A, fwd_in, fwd_out, inv_in, inv_out, Lnq, ctq, stq);
-            dbg[5] = 70;
-            inv_rows(A, inv_in, inv_out, outst, ox, oy, vx, width);
-            dbg[6] = 80;
+            block_wiener(A, B, Lnq, ctq, stq, outst, ox, oy, vx);
         }
 
-        dbg[7] = 90;
-        // emit the 128 valid rows
         for (int j = 0; j < 128; ++j)
             for (int c = 0; c < width; ++c) {
 #pragma HLS pipeline II=1
                 axis_frame_t o;
                 o.data = (ap_uint<32>)outst[j][c];
+                o.keep = -1;
+                o.strb = -1;
                 o.last = (c == width-1) && (j == 127) && (vy == last_vy);
                 dout.write(o);
             }
-        dbg[8] = 91;
     }
 
     if (!done_last) {
@@ -324,18 +354,17 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
             ctq.range(15, 0) = params[1][idx].range(15, 0);
             stq.range(15, 0) = params[2][idx].range(15, 0);
             idx++;
-            row_pass(A, B, fwd_in, fwd_out);
-            col_pass(B, A, fwd_in, fwd_out, inv_in, inv_out, Lnq, ctq, stq);
-            inv_rows(A, inv_in, inv_out, outst, ox, oy, vx, width);
+            block_wiener(A, B, Lnq, ctq, stq, outst, ox, oy, vx);
         }
         for (int j = 0; j < 128; ++j)
             for (int c = 0; c < width; ++c) {
 #pragma HLS pipeline II=1
                 axis_frame_t o;
                 o.data = (ap_uint<32>)outst[j][c];
+                o.keep = -1;
+                o.strb = -1;
                 o.last = (c == width-1) && (j == 127);
                 dout.write(o);
             }
     }
-    dbg[9] = 99;
 }

@@ -36,7 +36,7 @@ def main() -> int:
     timeout = float(sys.argv[3]) if len(sys.argv) > 3 else 120.0
     rx_rows = int(sys.argv[4]) if len(sys.argv) > 4 else H
     extra = int(sys.argv[5]) if len(sys.argv) > 5 else 0
-    W = (W // 256) * 256
+    W = (W // 128) * 128
     H = (H // 256) * 256
     bytes_ = W * H * 4
     tx_bytes = (W * H + (int(sys.argv[5]) if len(sys.argv) > 5 else 0)) * 4
@@ -53,7 +53,7 @@ def main() -> int:
     nsamp = W * H + extra
     words = bytearray(nsamp * 4)
     for i in range(0, W * H):
-        words[4 * i] = 128
+        words[4 * i] = 200
     with open(H2C, "wb", buffering=0) as f:
         f.seek(IN_ADDR)
         f.write(words)
