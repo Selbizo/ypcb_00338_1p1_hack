@@ -12,6 +12,19 @@ import re
 import sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "hw", "ip_repo", "wiener_stream", "hdl", "ip")
+def patch_fft_core_ce(root: str) -> int:
+    """Keep ap_ce high while fft_core waits for the hls::fft wrapper ap_done."""
+    n = 0
+    for path in glob.glob(os.path.join(root, "hdl", "verilog", "wiener_stream_fft_core.v")):
+        s = open(path).read()
+        old = "if (((1'b1 == ap_CS_fsm_state4) | (1'b1 == ap_CS_fsm_state3))) begin\n        grp_fft_fft_cfg_s_fu_83_ap_ce = 1'b1;"
+        new = "if (((1'b1 == ap_CS_fsm_state5) | (1'b1 == ap_CS_fsm_state4) | (1'b1 == ap_CS_fsm_state3))) begin\n        grp_fft_fft_cfg_s_fu_83_ap_ce = 1'b1;"
+        if old in s:
+            open(path, "w").write(s.replace(old, new))
+            n += 1
+            print("ap_ce patched", path)
+    return n
+
 patched = 0
 for path in glob.glob(os.path.join(ROOT, "*_core_ip.vhd")):
     s = open(path).read()
@@ -42,3 +55,4 @@ for path in glob.glob(os.path.join(ROOT, "*_core_ip.vhd")):
     patched += 1
     print("patched", path)
 print("patched files:", patched)
+print("ap_ce patched:", patch_fft_core_ce(os.path.join(ROOT, "..")))

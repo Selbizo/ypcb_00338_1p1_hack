@@ -69,16 +69,7 @@
       "wiener_0": "",
       "din_cc": "",
       "dout_cc": "",
-      "lite_cc": "",
-      "test_fft": "",
-      "test_cnt": "",
-      "test_one": "",
-      "test_zero24": "",
-      "test_cfg0": "",
-      "test_slice": "",
-      "test_tlast": "",
-      "test_concat": "",
-      "test_ila": ""
+      "lite_cc": ""
     },
     "interface_ports": {
       "DDR3_0": {
@@ -3454,7 +3445,7 @@
       },
       "wiener_0": {
         "vlnv": "user:hls:wiener_stream:1.0",
-        "ip_revision": "2114883572",
+        "ip_revision": "2114884222",
         "xci_name": "top_wiener_0_0",
         "xci_path": "ip/top_wiener_0_0_1/top_wiener_0_0.xci",
         "inst_hier_path": "wiener_0"
@@ -3543,194 +3534,6 @@
             "bridges": [
               "M_AXI"
             ]
-          }
-        }
-      },
-      "test_fft": {
-        "vlnv": "xilinx.com:ip:xfft:9.1",
-        "ip_revision": "13",
-        "xci_name": "top_test_fft_0",
-        "xci_path": "ip/top_test_fft_0/top_test_fft_0.xci",
-        "inst_hier_path": "test_fft",
-        "parameters": {
-          "aclken": {
-            "value": "true"
-          },
-          "aresetn": {
-            "value": "true"
-          },
-          "data_format": {
-            "value": "fixed_point"
-          },
-          "implementation_options": {
-            "value": "pipelined_streaming_io"
-          },
-          "input_width": {
-            "value": "24"
-          },
-          "output_ordering": {
-            "value": "natural_order"
-          },
-          "ovflo": {
-            "value": "false"
-          },
-          "phase_factor_width": {
-            "value": "16"
-          },
-          "rounding_modes": {
-            "value": "convergent_rounding"
-          },
-          "scaling_options": {
-            "value": "unscaled"
-          },
-          "throttle_scheme": {
-            "value": "realtime"
-          },
-          "transform_length": {
-            "value": "256"
-          }
-        }
-      },
-      "test_cnt": {
-        "vlnv": "xilinx.com:ip:c_counter_binary:12.0",
-        "ip_revision": "20",
-        "xci_name": "top_test_cnt_0",
-        "xci_path": "ip/top_test_cnt_0/top_test_cnt_0.xci",
-        "inst_hier_path": "test_cnt",
-        "parameters": {
-          "CE": {
-            "value": "true"
-          },
-          "Output_Width": {
-            "value": "24"
-          },
-          "SCLR": {
-            "value": "true"
-          }
-        }
-      },
-      "test_one": {
-        "vlnv": "xilinx.com:ip:xlconstant:1.1",
-        "ip_revision": "9",
-        "xci_name": "top_test_one_0",
-        "xci_path": "ip/top_test_one_0/top_test_one_0.xci",
-        "inst_hier_path": "test_one",
-        "parameters": {
-          "CONST_VAL": {
-            "value": "1"
-          },
-          "CONST_WIDTH": {
-            "value": "1"
-          }
-        }
-      },
-      "test_zero24": {
-        "vlnv": "xilinx.com:ip:xlconstant:1.1",
-        "ip_revision": "9",
-        "xci_name": "top_test_zero24_0",
-        "xci_path": "ip/top_test_zero24_0/top_test_zero24_0.xci",
-        "inst_hier_path": "test_zero24",
-        "parameters": {
-          "CONST_VAL": {
-            "value": "0"
-          },
-          "CONST_WIDTH": {
-            "value": "24"
-          }
-        }
-      },
-      "test_cfg0": {
-        "vlnv": "xilinx.com:ip:xlconstant:1.1",
-        "ip_revision": "9",
-        "xci_name": "top_test_cfg0_0",
-        "xci_path": "ip/top_test_cfg0_0/top_test_cfg0_0.xci",
-        "inst_hier_path": "test_cfg0",
-        "parameters": {
-          "CONST_VAL": {
-            "value": "0"
-          },
-          "CONST_WIDTH": {
-            "value": "8"
-          }
-        }
-      },
-      "test_slice": {
-        "vlnv": "xilinx.com:ip:xlslice:1.0",
-        "ip_revision": "4",
-        "xci_name": "top_test_slice_0",
-        "xci_path": "ip/top_test_slice_0/top_test_slice_0.xci",
-        "inst_hier_path": "test_slice",
-        "parameters": {
-          "DIN_FROM": {
-            "value": "7"
-          },
-          "DIN_TO": {
-            "value": "0"
-          },
-          "DIN_WIDTH": {
-            "value": "24"
-          },
-          "DOUT_WIDTH": {
-            "value": "8"
-          }
-        }
-      },
-      "test_tlast": {
-        "vlnv": "xilinx.com:ip:util_reduced_logic:2.0",
-        "ip_revision": "6",
-        "xci_name": "top_test_tlast_0",
-        "xci_path": "ip/top_test_tlast_0/top_test_tlast_0.xci",
-        "inst_hier_path": "test_tlast",
-        "parameters": {
-          "C_OPERATION": {
-            "value": "and"
-          },
-          "C_SIZE": {
-            "value": "8"
-          }
-        }
-      },
-      "test_concat": {
-        "vlnv": "xilinx.com:ip:xlconcat:2.1",
-        "ip_revision": "6",
-        "xci_name": "top_test_concat_0",
-        "xci_path": "ip/top_test_concat_0/top_test_concat_0.xci",
-        "inst_hier_path": "test_concat",
-        "parameters": {
-          "IN0_WIDTH": {
-            "value": "24"
-          },
-          "IN1_WIDTH": {
-            "value": "24"
-          },
-          "NUM_PORTS": {
-            "value": "2"
-          }
-        }
-      },
-      "test_ila": {
-        "vlnv": "xilinx.com:ip:system_ila:1.1",
-        "ip_revision": "19",
-        "xci_name": "top_test_ila_0",
-        "xci_path": "ip/top_test_ila_0/top_test_ila_0.xci",
-        "inst_hier_path": "test_ila",
-        "parameters": {
-          "C_DATA_DEPTH": {
-            "value": "8192"
-          },
-          "C_NUM_MONITOR_SLOTS": {
-            "value": "1"
-          },
-          "C_SLOT_0_INTF_TYPE": {
-            "value": "xilinx.com:interface:axis_rtl:1.0"
-          }
-        },
-        "interface_ports": {
-          "SLOT_0_AXIS": {
-            "mode": "Monitor",
-            "monitor_type": "SlaveType",
-            "vlnv_bus_definition": "xilinx.com:interface:axis:1.0",
-            "vlnv": "xilinx.com:interface:axis_rtl:1.0"
           }
         }
       }
@@ -3964,12 +3767,6 @@
           "mig_7series_0/C0_SYS_CLK"
         ]
       },
-      "test_fft_M_AXIS_DATA": {
-        "interface_ports": [
-          "test_fft/M_AXIS_DATA",
-          "test_ila/SLOT_0_AXIS"
-        ]
-      },
       "vdma_0_M_AXI_MM2S": {
         "interface_ports": [
           "axi_smc/S02_AXI",
@@ -4039,9 +3836,6 @@
           "din_cc/m_axis_aclk",
           "dout_cc/s_axis_aclk",
           "lite_cc/m_axi_aclk",
-          "test_cnt/CLK",
-          "test_fft/aclk",
-          "test_ila/clk",
           "wiener_0/ap_clk"
         ]
       },
@@ -4174,15 +3968,12 @@
           "din_cc/m_axis_aresetn",
           "dout_cc/s_axis_aresetn",
           "lite_cc/m_axi_aresetn",
-          "test_fft/aresetn",
-          "test_ila/resetn",
           "wiener_0/ap_rst_n"
         ]
       },
       "rst_215_peripheral_reset": {
         "ports": [
-          "rst_215/peripheral_reset",
-          "test_cnt/SCLR"
+          "rst_215/peripheral_reset"
         ]
       },
       "rst_clk_wiz_1_100M_bus_struct_reset": {
@@ -4230,52 +4021,6 @@
           "rst_mig_7series_0_133M/peripheral_aresetn",
           "microblaze_0_axi_periph/M02_ARESETN",
           "mig_7series_0/c0_aresetn"
-        ]
-      },
-      "test_cfg0_dout": {
-        "ports": [
-          "test_cfg0/dout",
-          "test_fft/s_axis_config_tdata"
-        ]
-      },
-      "test_cnt_Q": {
-        "ports": [
-          "test_cnt/Q",
-          "test_concat/In0",
-          "test_slice/Din"
-        ]
-      },
-      "test_concat_dout": {
-        "ports": [
-          "test_concat/dout",
-          "test_fft/s_axis_data_tdata"
-        ]
-      },
-      "test_one_dout": {
-        "ports": [
-          "test_one/dout",
-          "test_cnt/CE",
-          "test_fft/aclken",
-          "test_fft/s_axis_data_tvalid",
-          "test_fft/s_axis_config_tvalid"
-        ]
-      },
-      "test_slice_Dout": {
-        "ports": [
-          "test_slice/Dout",
-          "test_tlast/Op1"
-        ]
-      },
-      "test_tlast_Res": {
-        "ports": [
-          "test_tlast/Res",
-          "test_fft/s_axis_data_tlast"
-        ]
-      },
-      "test_zero24_dout": {
-        "ports": [
-          "test_zero24/dout",
-          "test_concat/In1"
         ]
       },
       "util_ds_buf_IBUF_OUT": {

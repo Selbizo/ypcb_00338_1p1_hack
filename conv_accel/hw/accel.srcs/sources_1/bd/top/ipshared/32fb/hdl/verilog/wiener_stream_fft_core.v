@@ -11,117 +11,125 @@ module wiener_stream_fft_core (
         ap_rst,
         ap_start,
         ap_done,
+        ap_continue,
         ap_idle,
         ap_ready,
-        fin_0_dout,
-        fin_0_empty_n,
-        fin_0_read,
-        fout_0_din,
-        fout_0_full_n,
-        fout_0_write,
-        dir
+        fin_7_dout,
+        fin_7_empty_n,
+        fin_7_read,
+        fin_7_num_data_valid,
+        fin_7_fifo_cap,
+        fout_7_din,
+        fout_7_full_n,
+        fout_7_write,
+        fout_7_num_data_valid,
+        fout_7_fifo_cap
 );
 
-parameter    ap_ST_fsm_state1 = 6'd1;
-parameter    ap_ST_fsm_state2 = 6'd2;
-parameter    ap_ST_fsm_state3 = 6'd4;
-parameter    ap_ST_fsm_state4 = 6'd8;
-parameter    ap_ST_fsm_state5 = 6'd16;
-parameter    ap_ST_fsm_state6 = 6'd32;
+parameter    ap_ST_fsm_state1 = 5'd1;
+parameter    ap_ST_fsm_state2 = 5'd2;
+parameter    ap_ST_fsm_state3 = 5'd4;
+parameter    ap_ST_fsm_state4 = 5'd8;
+parameter    ap_ST_fsm_state5 = 5'd16;
 
 input   ap_clk;
 input   ap_rst;
 input   ap_start;
 output   ap_done;
+input   ap_continue;
 output   ap_idle;
 output   ap_ready;
-input  [47:0] fin_0_dout;
-input   fin_0_empty_n;
-output   fin_0_read;
-output  [79:0] fout_0_din;
-input   fout_0_full_n;
-output   fout_0_write;
-input  [0:0] dir;
+input  [47:0] fin_7_dout;
+input   fin_7_empty_n;
+output   fin_7_read;
+input  [2:0] fin_7_num_data_valid;
+input  [2:0] fin_7_fifo_cap;
+output  [79:0] fout_7_din;
+input   fout_7_full_n;
+output   fout_7_write;
+input  [2:0] fout_7_num_data_valid;
+input  [2:0] fout_7_fifo_cap;
 
 reg ap_done;
 reg ap_idle;
 reg ap_ready;
 
-(* fsm_encoding = "none" *) reg   [5:0] ap_CS_fsm;
+reg    ap_done_reg;
+(* fsm_encoding = "none" *) reg   [4:0] ap_CS_fsm;
 wire    ap_CS_fsm_state1;
-reg    grp_fft_fft_cfg_s_fu_91_ap_ce;
-wire    grp_fft_fft_cfg_s_fu_91_ap_start;
-wire    grp_fft_fft_cfg_s_fu_91_ap_done;
-wire    grp_fft_fft_cfg_s_fu_91_ap_idle;
-wire    grp_fft_fft_cfg_s_fu_91_ap_ready;
-wire    grp_fft_fft_cfg_s_fu_91_xn_read;
-wire   [79:0] grp_fft_fft_cfg_s_fu_91_xk_din;
-wire    grp_fft_fft_cfg_s_fu_91_xk_write;
-wire   [7:0] grp_fft_fft_cfg_s_fu_91_status_data_V_din;
-wire    grp_fft_fft_cfg_s_fu_91_status_data_V_write;
-wire    grp_fft_fft_cfg_s_fu_91_config_ch_data_V_read;
+reg    grp_fft_fft_cfg_s_fu_83_ap_ce;
+wire    grp_fft_fft_cfg_s_fu_83_ap_start;
+wire    grp_fft_fft_cfg_s_fu_83_ap_done;
+wire    grp_fft_fft_cfg_s_fu_83_ap_idle;
+wire    grp_fft_fft_cfg_s_fu_83_ap_ready;
+wire    grp_fft_fft_cfg_s_fu_83_xn_read;
+wire   [79:0] grp_fft_fft_cfg_s_fu_83_xk_din;
+wire    grp_fft_fft_cfg_s_fu_83_xk_write;
+wire   [7:0] grp_fft_fft_cfg_s_fu_83_status_data_V_din;
+wire    grp_fft_fft_cfg_s_fu_83_status_data_V_write;
+wire    grp_fft_fft_cfg_s_fu_83_config_ch_data_V_read;
+wire    ap_CS_fsm_state3;
 wire    ap_CS_fsm_state4;
-wire    ap_CS_fsm_state5;
-reg    grp_fft_fft_cfg_s_fu_91_ap_start_reg;
+reg    grp_fft_fft_cfg_s_fu_83_ap_start_reg;
 wire    st_full_n;
 reg    st_write;
 wire   [7:0] cfg_dout;
 wire    cfg_empty_n;
 reg    cfg_read;
-reg   [7:0] c_fu_58;
-wire   [7:0] c_5_fu_129_p4;
-wire    ap_CS_fsm_state3;
-wire   [7:0] cfg_din;
-wire    cfg_full_n;
-reg    cfg_write;
-reg   [5:0] i_fu_62;
-wire   [5:0] i_2_fu_115_p2;
-wire    ap_CS_fsm_state2;
-wire   [0:0] icmp_ln52_fu_109_p2;
+reg   [4:0] i_071_fu_56;
+wire   [4:0] i_fu_120_p2;
+wire    ap_CS_fsm_state5;
 wire   [7:0] st_dout;
 wire    st_empty_n;
 reg    st_read;
-wire    ap_CS_fsm_state6;
-reg   [5:0] ap_NS_fsm;
+reg    ap_block_state1;
+reg   [7:0] c_062_fu_60;
+wire   [7:0] c_fu_101_p4;
+wire    ap_CS_fsm_state2;
+wire   [7:0] cfg_din;
+wire    cfg_full_n;
+reg    cfg_write;
+wire   [0:0] icmp_ln52_fu_126_p2;
+reg   [4:0] ap_NS_fsm;
 reg    ap_ST_fsm_state1_blk;
-wire    ap_ST_fsm_state2_blk;
-reg    ap_ST_fsm_state3_blk;
-wire    ap_ST_fsm_state4_blk;
+reg    ap_ST_fsm_state2_blk;
+wire    ap_ST_fsm_state3_blk;
+reg    ap_ST_fsm_state4_blk;
 reg    ap_ST_fsm_state5_blk;
-reg    ap_ST_fsm_state6_blk;
 wire    ap_ce_reg;
 
 // power-on initialization
 initial begin
-#0 ap_CS_fsm = 6'd1;
-#0 grp_fft_fft_cfg_s_fu_91_ap_start_reg = 1'b0;
-#0 c_fu_58 = 8'd0;
-#0 i_fu_62 = 6'd0;
+#0 ap_done_reg = 1'b0;
+#0 ap_CS_fsm = 5'd1;
+#0 grp_fft_fft_cfg_s_fu_83_ap_start_reg = 1'b0;
+#0 i_071_fu_56 = 5'd0;
+#0 c_062_fu_60 = 8'd0;
 end
 
-wiener_stream_fft_fft_cfg_s grp_fft_fft_cfg_s_fu_91(
+wiener_stream_fft_fft_cfg_s grp_fft_fft_cfg_s_fu_83(
     .ap_clk(ap_clk),
     .ap_rst(ap_rst),
-    .ap_ce(grp_fft_fft_cfg_s_fu_91_ap_ce),
-    .ap_start(grp_fft_fft_cfg_s_fu_91_ap_start),
-    .ap_done(grp_fft_fft_cfg_s_fu_91_ap_done),
-    .ap_idle(grp_fft_fft_cfg_s_fu_91_ap_idle),
-    .ap_ready(grp_fft_fft_cfg_s_fu_91_ap_ready),
-    .xn_dout(fin_0_dout),
-    .xn_empty_n(fin_0_empty_n),
-    .xn_read(grp_fft_fft_cfg_s_fu_91_xn_read),
-    .xk_din(grp_fft_fft_cfg_s_fu_91_xk_din),
-    .xk_full_n(fout_0_full_n),
-    .xk_write(grp_fft_fft_cfg_s_fu_91_xk_write),
-    .status_data_V_din(grp_fft_fft_cfg_s_fu_91_status_data_V_din),
+    .ap_ce(grp_fft_fft_cfg_s_fu_83_ap_ce),
+    .ap_start(grp_fft_fft_cfg_s_fu_83_ap_start),
+    .ap_done(grp_fft_fft_cfg_s_fu_83_ap_done),
+    .ap_idle(grp_fft_fft_cfg_s_fu_83_ap_idle),
+    .ap_ready(grp_fft_fft_cfg_s_fu_83_ap_ready),
+    .xn_dout(fin_7_dout),
+    .xn_empty_n(fin_7_empty_n),
+    .xn_read(grp_fft_fft_cfg_s_fu_83_xn_read),
+    .xk_din(grp_fft_fft_cfg_s_fu_83_xk_din),
+    .xk_full_n(fout_7_full_n),
+    .xk_write(grp_fft_fft_cfg_s_fu_83_xk_write),
+    .status_data_V_din(grp_fft_fft_cfg_s_fu_83_status_data_V_din),
     .status_data_V_full_n(st_full_n),
-    .status_data_V_write(grp_fft_fft_cfg_s_fu_91_status_data_V_write),
+    .status_data_V_write(grp_fft_fft_cfg_s_fu_83_status_data_V_write),
     .config_ch_data_V_dout(cfg_dout),
     .config_ch_data_V_empty_n(cfg_empty_n),
-    .config_ch_data_V_read(grp_fft_fft_cfg_s_fu_91_config_ch_data_V_read)
+    .config_ch_data_V_read(grp_fft_fft_cfg_s_fu_83_config_ch_data_V_read)
 );
 
-wiener_stream_fifo_w8_d2_S cfg_fifo_U(
+wiener_stream_fifo_w8_d2_S_x5 cfg_fifo_U(
     .clk(ap_clk),
     .reset(ap_rst),
     .if_read_ce(1'b1),
@@ -134,12 +142,12 @@ wiener_stream_fifo_w8_d2_S cfg_fifo_U(
     .if_read(cfg_read)
 );
 
-wiener_stream_fifo_w8_d2_S st_fifo_U(
+wiener_stream_fifo_w8_d2_S_x5 st_fifo_U(
     .clk(ap_clk),
     .reset(ap_rst),
     .if_read_ce(1'b1),
     .if_write_ce(1'b1),
-    .if_din(grp_fft_fft_cfg_s_fu_91_status_data_V_din),
+    .if_din(grp_fft_fft_cfg_s_fu_83_status_data_V_din),
     .if_full_n(st_full_n),
     .if_write(st_write),
     .if_dout(st_dout),
@@ -157,52 +165,70 @@ end
 
 always @ (posedge ap_clk) begin
     if (ap_rst == 1'b1) begin
-        grp_fft_fft_cfg_s_fu_91_ap_start_reg <= 1'b0;
+        ap_done_reg <= 1'b0;
     end else begin
-        if ((1'b1 == ap_CS_fsm_state4)) begin
-            grp_fft_fft_cfg_s_fu_91_ap_start_reg <= 1'b1;
-        end else if ((grp_fft_fft_cfg_s_fu_91_ap_ready == 1'b1)) begin
-            grp_fft_fft_cfg_s_fu_91_ap_start_reg <= 1'b0;
+        if ((ap_continue == 1'b1)) begin
+            ap_done_reg <= 1'b0;
+        end else if (((st_empty_n == 1'b1) & (1'b1 == ap_CS_fsm_state5) & (icmp_ln52_fu_126_p2 == 1'd1))) begin
+            ap_done_reg <= 1'b1;
         end
     end
 end
 
 always @ (posedge ap_clk) begin
-    if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
-        i_fu_62 <= 6'd0;
-    end else if (((1'b1 == ap_CS_fsm_state2) & (icmp_ln52_fu_109_p2 == 1'd0))) begin
-        i_fu_62 <= i_2_fu_115_p2;
+    if (ap_rst == 1'b1) begin
+        grp_fft_fft_cfg_s_fu_83_ap_start_reg <= 1'b0;
+    end else begin
+        if ((1'b1 == ap_CS_fsm_state3)) begin
+            grp_fft_fft_cfg_s_fu_83_ap_start_reg <= 1'b1;
+        end else if ((grp_fft_fft_cfg_s_fu_83_ap_ready == 1'b1)) begin
+            grp_fft_fft_cfg_s_fu_83_ap_start_reg <= 1'b0;
+        end
     end
 end
 
 always @ (posedge ap_clk) begin
-    if (((cfg_full_n == 1'b1) & (1'b1 == ap_CS_fsm_state3))) begin
-        c_fu_58 <= c_5_fu_129_p4;
+    if (((1'b1 == ap_CS_fsm_state1) & (1'b0 == ap_block_state1))) begin
+        i_071_fu_56 <= 5'd0;
+    end else if (((st_empty_n == 1'b1) & (1'b1 == ap_CS_fsm_state5))) begin
+        i_071_fu_56 <= i_fu_120_p2;
+    end
+end
+
+always @ (posedge ap_clk) begin
+    if (((1'b1 == ap_CS_fsm_state2) & (cfg_full_n == 1'b1))) begin
+        c_062_fu_60 <= c_fu_101_p4;
     end
 end
 
 always @ (*) begin
-    if ((ap_start == 1'b0)) begin
+    if ((1'b1 == ap_block_state1)) begin
         ap_ST_fsm_state1_blk = 1'b1;
     end else begin
         ap_ST_fsm_state1_blk = 1'b0;
     end
 end
 
-assign ap_ST_fsm_state2_blk = 1'b0;
-
 always @ (*) begin
     if ((cfg_full_n == 1'b0)) begin
-        ap_ST_fsm_state3_blk = 1'b1;
+        ap_ST_fsm_state2_blk = 1'b1;
     end else begin
-        ap_ST_fsm_state3_blk = 1'b0;
+        ap_ST_fsm_state2_blk = 1'b0;
     end
 end
 
-assign ap_ST_fsm_state4_blk = 1'b0;
+assign ap_ST_fsm_state3_blk = 1'b0;
 
 always @ (*) begin
-    if ((grp_fft_fft_cfg_s_fu_91_ap_done == 1'b0)) begin
+    if ((grp_fft_fft_cfg_s_fu_83_ap_done == 1'b0)) begin
+        ap_ST_fsm_state4_blk = 1'b1;
+    end else begin
+        ap_ST_fsm_state4_blk = 1'b0;
+    end
+end
+
+always @ (*) begin
+    if ((st_empty_n == 1'b0)) begin
         ap_ST_fsm_state5_blk = 1'b1;
     end else begin
         ap_ST_fsm_state5_blk = 1'b0;
@@ -210,18 +236,10 @@ always @ (*) begin
 end
 
 always @ (*) begin
-    if ((st_empty_n == 1'b0)) begin
-        ap_ST_fsm_state6_blk = 1'b1;
-    end else begin
-        ap_ST_fsm_state6_blk = 1'b0;
-    end
-end
-
-always @ (*) begin
-    if ((((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b0)) | ((1'b1 == ap_CS_fsm_state2) & (icmp_ln52_fu_109_p2 == 1'd1)))) begin
+    if (((st_empty_n == 1'b1) & (1'b1 == ap_CS_fsm_state5) & (icmp_ln52_fu_126_p2 == 1'd1))) begin
         ap_done = 1'b1;
     end else begin
-        ap_done = 1'b0;
+        ap_done = ap_done_reg;
     end
 end
 
@@ -234,7 +252,7 @@ always @ (*) begin
 end
 
 always @ (*) begin
-    if (((1'b1 == ap_CS_fsm_state2) & (icmp_ln52_fu_109_p2 == 1'd1))) begin
+    if (((st_empty_n == 1'b1) & (1'b1 == ap_CS_fsm_state5) & (icmp_ln52_fu_126_p2 == 1'd1))) begin
         ap_ready = 1'b1;
     end else begin
         ap_ready = 1'b0;
@@ -242,15 +260,15 @@ always @ (*) begin
 end
 
 always @ (*) begin
-    if (((1'b1 == ap_CS_fsm_state5) | (1'b1 == ap_CS_fsm_state4))) begin
-        cfg_read = grp_fft_fft_cfg_s_fu_91_config_ch_data_V_read;
+    if (((1'b1 == ap_CS_fsm_state4) | (1'b1 == ap_CS_fsm_state3))) begin
+        cfg_read = grp_fft_fft_cfg_s_fu_83_config_ch_data_V_read;
     end else begin
         cfg_read = 1'b0;
     end
 end
 
 always @ (*) begin
-    if (((cfg_full_n == 1'b1) & (1'b1 == ap_CS_fsm_state3))) begin
+    if (((1'b1 == ap_CS_fsm_state2) & (cfg_full_n == 1'b1))) begin
         cfg_write = 1'b1;
     end else begin
         cfg_write = 1'b0;
@@ -258,15 +276,15 @@ always @ (*) begin
 end
 
 always @ (*) begin
-    if (((1'b1 == ap_CS_fsm_state5) | (1'b1 == ap_CS_fsm_state4))) begin
-        grp_fft_fft_cfg_s_fu_91_ap_ce = 1'b1;
+    if (((1'b1 == ap_CS_fsm_state5) | (1'b1 == ap_CS_fsm_state4) | (1'b1 == ap_CS_fsm_state3))) begin
+        grp_fft_fft_cfg_s_fu_83_ap_ce = 1'b1;
     end else begin
-        grp_fft_fft_cfg_s_fu_91_ap_ce = 1'b0;
+        grp_fft_fft_cfg_s_fu_83_ap_ce = 1'b0;
     end
 end
 
 always @ (*) begin
-    if (((1'b1 == ap_CS_fsm_state6) & (st_empty_n == 1'b1))) begin
+    if (((st_empty_n == 1'b1) & (1'b1 == ap_CS_fsm_state5))) begin
         st_read = 1'b1;
     end else begin
         st_read = 1'b0;
@@ -274,8 +292,8 @@ always @ (*) begin
 end
 
 always @ (*) begin
-    if (((1'b1 == ap_CS_fsm_state5) | (1'b1 == ap_CS_fsm_state4))) begin
-        st_write = grp_fft_fft_cfg_s_fu_91_status_data_V_write;
+    if (((1'b1 == ap_CS_fsm_state4) | (1'b1 == ap_CS_fsm_state3))) begin
+        st_write = grp_fft_fft_cfg_s_fu_83_status_data_V_write;
     end else begin
         st_write = 1'b0;
     end
@@ -284,41 +302,36 @@ end
 always @ (*) begin
     case (ap_CS_fsm)
         ap_ST_fsm_state1 : begin
-            if (((1'b1 == ap_CS_fsm_state1) & (ap_start == 1'b1))) begin
+            if (((1'b1 == ap_CS_fsm_state1) & (1'b0 == ap_block_state1))) begin
                 ap_NS_fsm = ap_ST_fsm_state2;
             end else begin
                 ap_NS_fsm = ap_ST_fsm_state1;
             end
         end
         ap_ST_fsm_state2 : begin
-            if (((1'b1 == ap_CS_fsm_state2) & (icmp_ln52_fu_109_p2 == 1'd1))) begin
-                ap_NS_fsm = ap_ST_fsm_state1;
-            end else begin
+            if (((1'b1 == ap_CS_fsm_state2) & (cfg_full_n == 1'b1))) begin
                 ap_NS_fsm = ap_ST_fsm_state3;
+            end else begin
+                ap_NS_fsm = ap_ST_fsm_state2;
             end
         end
         ap_ST_fsm_state3 : begin
-            if (((cfg_full_n == 1'b1) & (1'b1 == ap_CS_fsm_state3))) begin
-                ap_NS_fsm = ap_ST_fsm_state4;
-            end else begin
-                ap_NS_fsm = ap_ST_fsm_state3;
-            end
+            ap_NS_fsm = ap_ST_fsm_state4;
         end
         ap_ST_fsm_state4 : begin
-            ap_NS_fsm = ap_ST_fsm_state5;
-        end
-        ap_ST_fsm_state5 : begin
-            if (((grp_fft_fft_cfg_s_fu_91_ap_done == 1'b1) & (1'b1 == ap_CS_fsm_state5))) begin
-                ap_NS_fsm = ap_ST_fsm_state6;
-            end else begin
+            if (((grp_fft_fft_cfg_s_fu_83_ap_done == 1'b1) & (1'b1 == ap_CS_fsm_state4))) begin
                 ap_NS_fsm = ap_ST_fsm_state5;
+            end else begin
+                ap_NS_fsm = ap_ST_fsm_state4;
             end
         end
-        ap_ST_fsm_state6 : begin
-            if (((1'b1 == ap_CS_fsm_state6) & (st_empty_n == 1'b1))) begin
+        ap_ST_fsm_state5 : begin
+            if (((st_empty_n == 1'b1) & (1'b1 == ap_CS_fsm_state5) & (icmp_ln52_fu_126_p2 == 1'd1))) begin
+                ap_NS_fsm = ap_ST_fsm_state1;
+            end else if (((st_empty_n == 1'b1) & (1'b1 == ap_CS_fsm_state5) & (icmp_ln52_fu_126_p2 == 1'd0))) begin
                 ap_NS_fsm = ap_ST_fsm_state2;
             end else begin
-                ap_NS_fsm = ap_ST_fsm_state6;
+                ap_NS_fsm = ap_ST_fsm_state5;
             end
         end
         default : begin
@@ -337,22 +350,24 @@ assign ap_CS_fsm_state4 = ap_CS_fsm[32'd3];
 
 assign ap_CS_fsm_state5 = ap_CS_fsm[32'd4];
 
-assign ap_CS_fsm_state6 = ap_CS_fsm[32'd5];
+always @ (*) begin
+    ap_block_state1 = ((ap_done_reg == 1'b1) | (ap_start == 1'b0));
+end
 
-assign c_5_fu_129_p4 = {c_fu_58[8-1:1], |(dir)};
+assign c_fu_101_p4 = {c_062_fu_60[8-1:1], |(1'd1)};
 
-assign cfg_din = {c_fu_58[8-1:1], |(dir)};
+assign cfg_din = {c_062_fu_60[8-1:1], |(1'd1)};
 
-assign fin_0_read = grp_fft_fft_cfg_s_fu_91_xn_read;
+assign fin_7_read = grp_fft_fft_cfg_s_fu_83_xn_read;
 
-assign fout_0_din = grp_fft_fft_cfg_s_fu_91_xk_din;
+assign fout_7_din = grp_fft_fft_cfg_s_fu_83_xk_din;
 
-assign fout_0_write = grp_fft_fft_cfg_s_fu_91_xk_write;
+assign fout_7_write = grp_fft_fft_cfg_s_fu_83_xk_write;
 
-assign grp_fft_fft_cfg_s_fu_91_ap_start = grp_fft_fft_cfg_s_fu_91_ap_start_reg;
+assign grp_fft_fft_cfg_s_fu_83_ap_start = grp_fft_fft_cfg_s_fu_83_ap_start_reg;
 
-assign i_2_fu_115_p2 = (i_fu_62 + 6'd1);
+assign i_fu_120_p2 = (i_071_fu_56 + 5'd1);
 
-assign icmp_ln52_fu_109_p2 = ((i_fu_62 == 6'd32) ? 1'b1 : 1'b0);
+assign icmp_ln52_fu_126_p2 = ((i_071_fu_56 == 5'd31) ? 1'b1 : 1'b0);
 
 endmodule //wiener_stream_fft_core

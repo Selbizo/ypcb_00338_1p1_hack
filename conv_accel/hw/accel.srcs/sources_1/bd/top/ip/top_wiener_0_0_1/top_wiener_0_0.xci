@@ -4,7 +4,7 @@
     "xci_name": "top_wiener_0_0",
     "cell_name": "wiener_0",
     "component_reference": "user:hls:wiener_stream:1.0",
-    "ip_revision": "2114883572",
+    "ip_revision": "2114884222",
     "gen_directory": "../../../../../../accel.gen/sources_1/bd/top/ip/top_wiener_0_0_1",
     "parameters": {
       "component_parameters": {
@@ -34,7 +34,7 @@
       },
       "runtime_parameters": {
         "IPCONTEXT": [ { "value": "IP_Integrator" } ],
-        "IPREVISION": [ { "value": "2114883572" } ],
+        "IPREVISION": [ { "value": "2114884222" } ],
         "MANAGED": [ { "value": "TRUE" } ],
         "OUTPUTDIR": [ { "value": "../../../../../../accel.gen/sources_1/bd/top/ip/top_wiener_0_0_1" } ],
         "SELECTEDSIMMODEL": [ { "value": "" } ],

@@ -56,7 +56,7 @@ static void fft_core(hls::stream<cplx_t> &in, hls::stream<cplx_w_t> &out,
         c.setDir(dir != 0);
         cfg.write(c);
         hls::fft<fft_cfg>(in, out, st, cfg);
-        // no st.read(): unscaled / ovflo=false core emits no status word
+        st.read();   // the wrapper writes a (zero) status word every frame
     }
 }
 
@@ -176,66 +176,77 @@ static void store_tile(hls::stream<cplx_w_t> out[PAR], ap_uint<8> outst[128][W_M
 }
 
 // ---------------- one 256x256 block 2D Wiener ----------------
+// Each pass is a separate function so #pragma HLS dataflow applies to the
+// whole function (HLS ignores it for a bare { } region, which serialises
+// the processes and deadlocks on the stream FIFOs).
+static void row_pass(cplx_t A[N/8][N/8][8][8], cplx_t B[N/8][N/8][8][8]) {
+#pragma HLS dataflow disable_start_propagation
+    hls::stream<cplx_t>   fin[PAR];
+    hls::stream<cplx_w_t> fout[PAR];
+    load_rows(A, fin);
+    fft_core(fin[0], fout[0], FRAMES, 1);
+    fft_core(fin[1], fout[1], FRAMES, 1);
+    fft_core(fin[2], fout[2], FRAMES, 1);
+    fft_core(fin[3], fout[3], FRAMES, 1);
+    fft_core(fin[4], fout[4], FRAMES, 1);
+    fft_core(fin[5], fout[5], FRAMES, 1);
+    fft_core(fin[6], fout[6], FRAMES, 1);
+    fft_core(fin[7], fout[7], FRAMES, 1);
+    store_rows(fout, B);
+}
+
+static void col_pass(cplx_t A[N/8][N/8][8][8], cplx_t B[N/8][N/8][8][8],
+                     q15_t Ln, q15_t ct, q15_t st) {
+#pragma HLS dataflow disable_start_propagation
+    hls::stream<cplx_t>   cin[PAR];
+    hls::stream<cplx_w_t> cout_f[PAR];
+    hls::stream<cplx_t>   cinv[PAR];
+    hls::stream<cplx_w_t> cout_i[PAR];
+    load_cols(B, cin);
+    fft_core(cin[0], cout_f[0], FRAMES, 1);
+    fft_core(cin[1], cout_f[1], FRAMES, 1);
+    fft_core(cin[2], cout_f[2], FRAMES, 1);
+    fft_core(cin[3], cout_f[3], FRAMES, 1);
+    fft_core(cin[4], cout_f[4], FRAMES, 1);
+    fft_core(cin[5], cout_f[5], FRAMES, 1);
+    fft_core(cin[6], cout_f[6], FRAMES, 1);
+    fft_core(cin[7], cout_f[7], FRAMES, 1);
+    apply_g(cout_f, cinv, Ln, ct, st);
+    fft_core(cinv[0], cout_i[0], FRAMES, 0);
+    fft_core(cinv[1], cout_i[1], FRAMES, 0);
+    fft_core(cinv[2], cout_i[2], FRAMES, 0);
+    fft_core(cinv[3], cout_i[3], FRAMES, 0);
+    fft_core(cinv[4], cout_i[4], FRAMES, 0);
+    fft_core(cinv[5], cout_i[5], FRAMES, 0);
+    fft_core(cinv[6], cout_i[6], FRAMES, 0);
+    fft_core(cinv[7], cout_i[7], FRAMES, 0);
+    store_cols(cout_i, A);
+}
+
+static void inv_pass(cplx_t A[N/8][N/8][8][8], ap_uint<8> outst[128][W_MAX],
+                     int ox, int oy, int vx) {
+#pragma HLS dataflow disable_start_propagation
+    hls::stream<cplx_t>   iin[PAR];
+    hls::stream<cplx_w_t> iout[PAR];
+    load_rows2(A, iin);
+    fft_core(iin[0], iout[0], FRAMES, 0);
+    fft_core(iin[1], iout[1], FRAMES, 0);
+    fft_core(iin[2], iout[2], FRAMES, 0);
+    fft_core(iin[3], iout[3], FRAMES, 0);
+    fft_core(iin[4], iout[4], FRAMES, 0);
+    fft_core(iin[5], iout[5], FRAMES, 0);
+    fft_core(iin[6], iout[6], FRAMES, 0);
+    fft_core(iin[7], iout[7], FRAMES, 0);
+    store_tile(iout, outst, ox, oy, vx);
+}
+
 static void block_wiener(cplx_t A[N/8][N/8][8][8], cplx_t B[N/8][N/8][8][8],
                          q15_t Ln, q15_t ct, q15_t st,
                          ap_uint<8> outst[128][W_MAX],
                          int ox, int oy, int vx) {
-    {
-#pragma HLS dataflow
-        hls::stream<cplx_t>   fin[PAR];
-        hls::stream<cplx_w_t> fout[PAR];
-        load_rows(A, fin);
-        fft_core(fin[0], fout[0], FRAMES, 1);
-        fft_core(fin[1], fout[1], FRAMES, 1);
-        fft_core(fin[2], fout[2], FRAMES, 1);
-        fft_core(fin[3], fout[3], FRAMES, 1);
-        fft_core(fin[4], fout[4], FRAMES, 1);
-        fft_core(fin[5], fout[5], FRAMES, 1);
-        fft_core(fin[6], fout[6], FRAMES, 1);
-        fft_core(fin[7], fout[7], FRAMES, 1);
-        store_rows(fout, B);
-    }
-    {
-#pragma HLS dataflow
-        hls::stream<cplx_t>   cin[PAR];
-        hls::stream<cplx_w_t> cout_f[PAR];
-        hls::stream<cplx_t>   cinv[PAR];
-        hls::stream<cplx_w_t> cout_i[PAR];
-        load_cols(B, cin);
-        fft_core(cin[0], cout_f[0], FRAMES, 1);
-        fft_core(cin[1], cout_f[1], FRAMES, 1);
-        fft_core(cin[2], cout_f[2], FRAMES, 1);
-        fft_core(cin[3], cout_f[3], FRAMES, 1);
-        fft_core(cin[4], cout_f[4], FRAMES, 1);
-        fft_core(cin[5], cout_f[5], FRAMES, 1);
-        fft_core(cin[6], cout_f[6], FRAMES, 1);
-        fft_core(cin[7], cout_f[7], FRAMES, 1);
-        apply_g(cout_f, cinv, Ln, ct, st);
-        fft_core(cinv[0], cout_i[0], FRAMES, 0);
-        fft_core(cinv[1], cout_i[1], FRAMES, 0);
-        fft_core(cinv[2], cout_i[2], FRAMES, 0);
-        fft_core(cinv[3], cout_i[3], FRAMES, 0);
-        fft_core(cinv[4], cout_i[4], FRAMES, 0);
-        fft_core(cinv[5], cout_i[5], FRAMES, 0);
-        fft_core(cinv[6], cout_i[6], FRAMES, 0);
-        fft_core(cinv[7], cout_i[7], FRAMES, 0);
-        store_cols(cout_i, A);
-    }
-    {
-#pragma HLS dataflow
-        hls::stream<cplx_t>   iin[PAR];
-        hls::stream<cplx_w_t> iout[PAR];
-        load_rows2(A, iin);
-        fft_core(iin[0], iout[0], FRAMES, 0);
-        fft_core(iin[1], iout[1], FRAMES, 0);
-        fft_core(iin[2], iout[2], FRAMES, 0);
-        fft_core(iin[3], iout[3], FRAMES, 0);
-        fft_core(iin[4], iout[4], FRAMES, 0);
-        fft_core(iin[5], iout[5], FRAMES, 0);
-        fft_core(iin[6], iout[6], FRAMES, 0);
-        fft_core(iin[7], iout[7], FRAMES, 0);
-        store_tile(iout, outst, ox, oy, vx);
-    }
+    row_pass(A, B);
+    col_pass(A, B, Ln, ct, st);
+    inv_pass(A, outst, ox, oy, vx);
 }
 
 // ---------------- top ----------------
