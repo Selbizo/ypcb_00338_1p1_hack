@@ -53,7 +53,7 @@ def main() -> int:
     nsamp = W * H + extra
     words = bytearray(nsamp * 4)
     for i in range(0, W * H):
-        words[4 * i] = 200
+        words[4 * i] = (i * 7) & 0xFF
     with open(H2C, "wb", buffering=0) as f:
         f.seek(IN_ADDR)
         f.write(words)
@@ -80,6 +80,7 @@ def main() -> int:
         wr(KRN + PAR + 4 * (256 + i), 32767)
     wr(KRN + 0x10, W)
     wr(KRN + 0x18, H)
+    wr(KRN + 0x20, int(os.environ.get("DEBLUR_FPGA_SCALE", "1340000")))
 
     # arm DMA: src/dst, then start
     wr(DMA + TX_SRC, IN_ADDR)
@@ -116,7 +117,7 @@ def main() -> int:
         time.sleep(0.05)
 
     print(f"kernel regs: width={rd(KRN+0x10)} height={rd(KRN+0x18)} ctrl=0x{rd(KRN):08X}")
-    dvals = [rd(KRN + 0x40 + 4 * i) for i in range(10)]
+    dvals = [rd(KRN + 0x40 + 4 * i) for i in range(16)]
     print("dbg[]:", dvals)
     print("dbg stages:", [v // 256 for v in dvals])
     with open(C2H, "rb", buffering=0) as f:

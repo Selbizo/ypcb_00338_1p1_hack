@@ -13,10 +13,20 @@ set_property C_TRIGOUT_EN false [get_debug_cores u_ila_0]
 set_property C_ADV_TRIGGER false [get_debug_cores u_ila_0]
 connect_debug_port u_ila_0/clk [get_nets top_i/wiener_0/inst/ap_clk]
 
-set states [lsort -dictionary [get_nets -hier -quiet -filter {NAME =~ "*wiener_0/inst/ap_CS_fsm_state*"}]]
-puts "STATES: [llength $states]"
+set nets {}
+foreach pat {
+    {*wiener_0/inst/ap_CS_fsm_state23}
+    {*wiener_0/inst/grp_inv_rows_fu_3018/ap_CS_fsm_state*}
+    {*wiener_0/inst/grp_inv_rows_fu_3018/grp_send_rows_fu_482/ap_CS_fsm*}
+    {*wiener_0/inst/grp_inv_rows_fu_3018/grp_inv_rows_Outline_VITIS_LOOP_163_1_fu_806/ap_CS_fsm*}
+    {*wiener_0/inst/grp_inv_rows_fu_3018/grp_send_rows_fu_482/ap_enable_reg*}
+    {*wiener_0/inst/grp_inv_rows_fu_3018/grp_inv_rows_Outline_VITIS_LOOP_163_1_fu_806/ap_enable_reg*}
+} {
+    foreach n [lsort -dictionary [get_nets -hier -quiet -filter "NAME =~ \"$pat\""]] { lappend nets $n }
+}
+puts "NETS: [llength $nets]"
 set i 0
-foreach n $states {
+foreach n $nets {
     if {$i > 0} { create_debug_port u_ila_0 probe }
     set_property port_width 1 [get_debug_ports u_ila_0/probe$i]
     connect_debug_port u_ila_0/probe$i [get_nets $n]

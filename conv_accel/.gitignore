@@ -35,3 +35,8 @@ host/build/
 # ---- tool logs ----
 *.log
 *.jou
+
+# Vivado misc
+clockInfo.txt
+tight_setup_hold_pins.txt
+hw/accel.srcs/sources_1/bd/top/ipshared/*/hdl/verilog/wiener_stream*

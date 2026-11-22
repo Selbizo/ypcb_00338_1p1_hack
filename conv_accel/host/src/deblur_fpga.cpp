@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <stdexcept>
 #include <thread>
@@ -109,15 +110,22 @@ public:
             bar_.wr(kKernelBase + kParamsOff + 4u * i, params[i]);
         bar_.wr(kKernelBase + 0x10, static_cast<uint32_t>(W));  // width
         bar_.wr(kKernelBase + 0x18, static_cast<uint32_t>(H));  // height
+        // output luma scale (tunable without rebuilding the bitstream)
+        int scale = 1340000;
+        if (const char* e = std::getenv("DEBLUR_FPGA_SCALE")) {
+            int v = std::atoi(e);
+            if (v > 0) scale = v;
+        }
+        bar_.wr(kKernelBase + 0x20, static_cast<uint32_t>(scale));
         bar_.wr(kKernelBase, 1u);                               // ap_start
 
         std::vector<uint32_t> ob(n);
         dma_.setup(kInAddr, kOutAddr, static_cast<uint32_t>(bytes));
         dma_.start();
-        if (!dma_.wait_done(5000)) throw std::runtime_error("deblur: AXI DMA failed");
+        if (!dma_.wait_done(60000)) throw std::runtime_error("deblur: AXI DMA failed");
 
         bool done = false;
-        for (int t = 0; t < 10000; ++t) {
+        for (int t = 0; t < 120000; ++t) {
             if (bar_.rd(kKernelBase) & 2u) { done = true; break; }
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
