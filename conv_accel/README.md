@@ -16,6 +16,21 @@ Kintex-7 XC7K480T-FFG1156-2, PCIe, DDR3), которую дальше наращ
   5×5 RGB) синтезируются с **II=1**; `conv2d` на 4K — ~33 мс/кадр при 250 МГц,
   оценка Fmax 331 МГц. IP лежат в `hw/ip_repo/`.
 - Vitis Vision 2024.2 подтянут (`hls/third_party/vision`).
+- **Деблюр (Y-Wiener) целиком на FPGA**: 16 × xfft + потоковое ядро,
+  1080p, ~0.29 с/кадр через `deblur_demo` (включая PCIe-обмен).
+
+## Стенд сравнения бэкендов
+
+Одна задача деблюра — четыре реализации за общим API: **CPU, OpenCL,
+CUDA, FPGA**. Стенд меряет медианное время, fps и PSNR относительно CPU:
+
+```bash
+./host/build/deblur_bench --in blur.png --iters 7 --warmup 2 \
+    --dx 9 --dy 0 --exposure 1 --nsr 0.01
+```
+
+Подробное объяснение «для неспециалиста», устройство стенда, результаты
+замеров и как добавить свой бэкенд — в [`docs/benchmark.md`](docs/benchmark.md).
 
 ## Что дальше
 
