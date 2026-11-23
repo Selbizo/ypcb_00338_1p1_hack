@@ -240,13 +240,13 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
 
     static cplx_t A[N/8][N/8][8][8];
     static cplx_t B[N/8][N/8][8][8];
-    static ap_uint<8> strip[256][W_MAX];
+    static ap_uint<8> strip[32][8][W_MAX];
     static ap_uint<8> outst[128][W_MAX];
 #pragma HLS array_partition variable=A complete dim=3
 #pragma HLS array_partition variable=A complete dim=4
 #pragma HLS array_partition variable=B complete dim=3
 #pragma HLS array_partition variable=B complete dim=4
-#pragma HLS array_partition variable=strip cyclic factor=8 dim=1
+#pragma HLS array_partition variable=strip complete dim=2
 #pragma HLS array_partition variable=outst cyclic factor=8 dim=1
 
     int read_row = 0;
@@ -258,6 +258,7 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
         int by = vy - 64;
         if (by < 0) by = 0;
         if (by > height - N) by = height - N;
+        by &= ~7;                       // bank alignment for the strip load
         int oy = vy - by;
 
         dbg[0] = 20 + vy / 128;   // entered block row
@@ -266,7 +267,7 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
             for (int c = 0; c < width; ++c) {
 #pragma HLS pipeline II=1
                 axis_frame_t x = din.read();
-                strip[read_row % 256][c] = x.data.range(7, 0);
+                strip[(read_row % 256) >> 3][read_row % 8][c] = x.data.range(7, 0);
             }
             read_row++;
         }
@@ -284,8 +285,8 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
 #pragma HLS pipeline II=1
                     for (int p = 0; p < 8; ++p) {
 #pragma HLS unroll
-                        int rr = (by + r0 + p) % 256;
-                        int yv = (int)strip[rr][bx + c];
+                        int rg = ((by + r0) >> 3) & 31;
+                        int yv = (int)strip[rg][p][bx + c];
                         ap_fixed<16, 8> d = yv - 128;
                         A[(r0+p)/8][c/8][(r0+p)%8][c%8] =
                             cplx_t(sample_t(d >> 8), sample_t(0));
@@ -309,8 +310,14 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
         }
 
         dbg[7] = 90;
-        // emit the valid rows of this block row
-        for (int j = 0; j < 128; ++j)
+        // Emit the valid rows of this block row.  When a tail block exists,
+        // the tail owns [last_vy, height): the last main row stops at last_vy
+        // so the total stream stays width*height rows and matches the CPU
+        // backend tiling (the tail overwrites the overlap).
+        int emit_rows = 128;
+        if (!done_last && vy == (last_vy / 128) * 128)
+            emit_rows = last_vy - vy;
+        for (int j = 0; j < emit_rows; ++j)
             for (int c = 0; c < width; ++c) {
 #pragma HLS pipeline II=1
                 axis_frame_t o;
@@ -328,12 +335,13 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
         int by = vy - 64;
         if (by < 0) by = 0;
         if (by > height - N) by = height - N;
+        by &= ~7;                       // bank alignment for the strip load
         int oy = vy - by;
         while (read_row <= by + N - 1) {
             for (int c = 0; c < width; ++c) {
 #pragma HLS pipeline II=1
                 axis_frame_t x = din.read();
-                strip[read_row % 256][c] = x.data.range(7, 0);
+                strip[(read_row % 256) >> 3][read_row % 8][c] = x.data.range(7, 0);
             }
             read_row++;
         }
@@ -347,8 +355,8 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
 #pragma HLS pipeline II=1
                     for (int p = 0; p < 8; ++p) {
 #pragma HLS unroll
-                        int rr = (by + r0 + p) % 256;
-                        int yv = (int)strip[rr][bx + c];
+                        int rg = ((by + r0) >> 3) & 31;
+                        int yv = (int)strip[rg][p][bx + c];
                         ap_fixed<16, 8> d = yv - 128;
                         A[(r0+p)/8][c/8][(r0+p)%8][c%8] =
                             cplx_t(sample_t(d >> 8), sample_t(0));
@@ -363,14 +371,8 @@ void wiener_stream(hls::stream<axis_in_t> fwd_in[8], hls::stream<axis_out_t> fwd
             col_pass(B, A, fwd_in, fwd_out, inv_in, inv_out, Lnq, ctq, stq);
             inv_rows(A, inv_in, inv_out, outst, ox, oy, vx, width, out_scale);
         }
-        // the main loop already emitted rows [0, covered); emit only the
-        // remaining bottom rows from this tail pass
-        int main_last = (last_vy / 128) * 128;
-        int covered = main_last + 128;
-        int j0 = covered - last_vy;
-        if (j0 < 0) j0 = 0;
-        if (j0 > 128) j0 = 128;
-        for (int j = j0; j < 128; ++j)
+        // the tail block owns [last_vy, last_vy+128) = [last_vy, height)
+        for (int j = 0; j < 128; ++j)
             for (int c = 0; c < width; ++c) {
 #pragma HLS pipeline II=1
                 axis_frame_t o;

@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <stdexcept>
@@ -75,7 +76,14 @@ public:
         std::vector<uint32_t> in(n);
         for (size_t i = 0; i < n; ++i) in[i] = y.data[i];
 
+        const bool prof = std::getenv("DEBLUR_FPGA_PROFILE") != nullptr;
+        auto now = [] { return std::chrono::steady_clock::now(); };
+        auto ms_since = [](std::chrono::steady_clock::time_point t) {
+            return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t).count();
+        };
+        auto t_prof = now();
         xdma_.write(kInAddr, in.data(), bytes);
+        const double t_write = ms_since(t_prof);
 
         // per-block G parameters: (L/N, cos theta, sin theta)
         std::vector<uint32_t> params(3 * kMaxBlocks, 0u);
@@ -120,18 +128,29 @@ public:
         bar_.wr(kKernelBase, 1u);                               // ap_start
 
         std::vector<uint32_t> ob(n);
+        t_prof = now();
         dma_.setup(kInAddr, kOutAddr, static_cast<uint32_t>(bytes));
         dma_.start();
         if (!dma_.wait_done(60000)) throw std::runtime_error("deblur: AXI DMA failed");
+        const double t_kernel = ms_since(t_prof);
 
         bool done = false;
+        t_prof = now();
         for (int t = 0; t < 120000; ++t) {
             if (bar_.rd(kKernelBase) & 2u) { done = true; break; }
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
+        const double t_poll = ms_since(t_prof);
         if (!done) throw std::runtime_error("deblur: kernel timeout");
 
+        t_prof = now();
         xdma_.read(kOutAddr, ob.data(), bytes);
+        const double t_read = ms_since(t_prof);
+        if (prof) {
+            std::fprintf(stderr,
+                "fpga profile: write %.1f ms, kernel %.1f ms, poll %.1f ms, read %.1f ms, total %.1f ms\n",
+                t_write, t_kernel, t_poll, t_read, t_write + t_kernel + t_poll + t_read);
+        }
 
         cv::Mat yo(H, W, CV_8U);
         for (size_t i = 0; i < n; ++i) yo.data[i] = static_cast<uchar>(ob[i] & 0xFFu);

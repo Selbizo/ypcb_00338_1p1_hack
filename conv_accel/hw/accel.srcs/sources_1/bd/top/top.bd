@@ -3526,7 +3526,7 @@
       },
       "wiener_0": {
         "vlnv": "user:hls:wiener_stream:1.0",
-        "ip_revision": "2114885432",
+        "ip_revision": "2114886864",
         "xci_name": "top_wiener_0_0",
         "xci_path": "ip/top_wiener_0_0_1/top_wiener_0_0.xci",
         "inst_hier_path": "wiener_0"
@@ -4346,7 +4346,7 @@
         "inst_hier_path": "fwd_fifo_0",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "512"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -4379,7 +4379,7 @@
         "inst_hier_path": "fwd_fifo_1",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "512"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -4412,7 +4412,7 @@
         "inst_hier_path": "fwd_fifo_2",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "512"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -4445,7 +4445,7 @@
         "inst_hier_path": "fwd_fifo_3",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "512"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -4478,7 +4478,7 @@
         "inst_hier_path": "fwd_fifo_4",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "512"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -4511,7 +4511,7 @@
         "inst_hier_path": "fwd_fifo_5",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "512"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -4544,7 +4544,7 @@
         "inst_hier_path": "fwd_fifo_6",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "512"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -4577,7 +4577,7 @@
         "inst_hier_path": "fwd_fifo_7",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "512"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -4610,7 +4610,7 @@
         "inst_hier_path": "inv_fifo_0",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "8192"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -4643,7 +4643,7 @@
         "inst_hier_path": "inv_fifo_1",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "8192"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -4676,7 +4676,7 @@
         "inst_hier_path": "inv_fifo_2",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "8192"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -4709,7 +4709,7 @@
         "inst_hier_path": "inv_fifo_3",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "8192"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -4742,7 +4742,7 @@
         "inst_hier_path": "inv_fifo_4",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "8192"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -4775,7 +4775,7 @@
         "inst_hier_path": "inv_fifo_5",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "8192"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -4808,7 +4808,7 @@
         "inst_hier_path": "inv_fifo_6",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "8192"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"
@@ -4841,7 +4841,7 @@
         "inst_hier_path": "inv_fifo_7",
         "parameters": {
           "FIFO_DEPTH": {
-            "value": "8192"
+            "value": "2048"
           },
           "HAS_TKEEP": {
             "value": "0"

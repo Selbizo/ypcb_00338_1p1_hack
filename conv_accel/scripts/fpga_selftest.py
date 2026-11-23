@@ -132,6 +132,15 @@ def main() -> int:
     print(f"output: {nz}/{len(out)//4} non-zero, {rows}/{max(1,rx_rows)} rows touched")
     vals = [out[4 * i] for i in range(0, min(len(out)//4, 64))]
     print("first luma out:", vals[:16])
+    # PSNR of the whole frame against the known flat/ramp input (helps quick checks)
+    if rx_rows == H:
+        import math
+        mse = 0.0
+        for i in range(W * H):
+            d = int(out[4 * i]) - int(words[4 * i])
+            mse += d * d
+        mse /= (W * H)
+        print("whole-frame PSNR vs input: %.2f dB" % (10 * math.log10(255 * 255 / mse) if mse > 0 else 99.0))
     return 0
 
 

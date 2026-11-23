@@ -17,7 +17,7 @@ Kintex-7 XC7K480T-FFG1156-2, PCIe, DDR3), которую дальше наращ
   оценка Fmax 331 МГц. IP лежат в `hw/ip_repo/`.
 - Vitis Vision 2024.2 подтянут (`hls/third_party/vision`).
 - **Деблюр (Y-Wiener) целиком на FPGA**: 16 × xfft + потоковое ядро,
-  1080p, ~0.29 с/кадр через `deblur_demo` (включая PCIe-обмен).
+  1080p, ~95 мс на кадр (`deblur_bench`, включая PCIe-обмен), 10.6 fps.
 
 ## Стенд сравнения бэкендов
 
