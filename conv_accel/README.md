@@ -92,3 +92,14 @@ sudo /tmp/dmatest 25165824 0     # 24 МБ туда-обратно в DDR3 @ AXI
 - Во флеш кладём только `.mcs` (BPIX16), не `.bin`/`.bit`.
 
 Подробности — в `docs/platform.md`.
+
+## Документация
+
+- [`docs/tutorial.md`](docs/tutorial.md) — **учебник**: как проект
+  строился шаг за шагом, алгоритм, HLS, BD, хост, отладка, ускорение,
+  чек-листы и «грабли».
+- [`docs/benchmark.md`](docs/benchmark.md) — стенд сравнения
+  CPU / OpenCL / CUDA / FPGA.
+- [`docs/platform.md`](docs/platform.md) — плата, линк, DDR3, флеш.
+- [`docs/architecture_multi_backend.md`](docs/architecture_multi_backend.md) —
+  карта адресов и история работ.
