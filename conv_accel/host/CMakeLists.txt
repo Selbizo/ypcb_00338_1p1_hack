@@ -40,6 +40,9 @@ target_link_libraries(deblur_demo PRIVATE accel)
 add_executable(deblur_video apps/deblur_video.cpp)
 target_link_libraries(deblur_video PRIVATE accel)
 
+add_executable(deblur_lab apps/deblur_lab.cpp)
+target_link_libraries(deblur_lab PRIVATE accel)
+
 add_executable(deblur_bench apps/deblur_bench.cpp)
 target_link_libraries(deblur_bench PRIVATE accel)
 
