@@ -274,7 +274,7 @@ void dump_psf_frame(const std::string& dir, int frame_no,
 int main(int argc, char** argv) {
     std::string in, out, backend = "auto", fixed, psf_dir;
     int max_frames = 0, psf_frames = 5;
-    bool display = false;
+    bool display = false, exposure_set = false;
     float exposure = 0.5f, nsr = 0.01f;
 
     for (int i = 1; i < argc; ++i) {
@@ -286,7 +286,7 @@ int main(int argc, char** argv) {
         if (a == "--in")            in = next();
         else if (a == "--out")      out = next();
         else if (a == "--backend")  backend = next();
-        else if (a == "--exposure") exposure = std::stof(next());
+        else if (a == "--exposure") { exposure = std::stof(next()); exposure_set = true; }
         else if (a == "--nsr")      nsr = std::stof(next());
         else if (a == "--fixed")    fixed = next();
         else if (a == "--max-frames") max_frames = std::stoi(next());
@@ -295,9 +295,10 @@ int main(int argc, char** argv) {
         else if (a == "--display")  display = true;
         else if (a == "-h" || a == "--help") {
             std::cout << "usage: deblur_video --in VID [--out VID] [--backend ...]\n"
-                         "                     [--exposure 0.5] [--nsr 0.01] [--fixed dx,dy,da]\n"
+                         "                     [--exposure D] [--nsr 0.01] [--fixed dx,dy,da]\n"
                          "                     [--max-frames N] [--display]\n"
                          "                     [--dump-psf DIR] [--psf-frames N]\n"
+                         "  --exposure D     shutter time / frame interval; blur length = D*|motion|\n"
                          "  --dump-psf DIR   write per-block PSF montages (psf_NNNN.png/.csv);\n"
                          "                   also honoured via DEBLUR_PSF_DIR\n"
                          "  --psf-frames N   number of frames to dump (default 5, 0 = all)\n";
@@ -305,6 +306,9 @@ int main(int argc, char** argv) {
         } else { std::cerr << "unknown option: " << a << "\n"; return 1; }
     }
     if (in.empty()) { std::cerr << "usage: deblur_video --in VID [options]\n"; return 1; }
+    if (!exposure_set)
+        std::cout << "note: --exposure not given, using 0.5; pass the real shutter/frame "
+                     "ratio, otherwise the blur length is overestimated\n";
 
     if (psf_dir.empty()) {
         if (const char* e = std::getenv("DEBLUR_PSF_DIR")) psf_dir = e;
