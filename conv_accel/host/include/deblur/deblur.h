@@ -19,6 +19,12 @@ namespace deblur {
 
 // Motion between two frames, as estimated by estimateAffine2D():
 //   p(u) = c + u*T + R(u*Phi)*(p - c),  T = exposure*(dx,dy), Phi = exposure*dalpha
+//
+// dx/dy/dalpha are measured over one frame interval.  exposure is the ratio
+//   D = shutter_time / frame_interval,
+// so the actual blur is T = D*(dx,dy).  For a short shutter (for example
+// 1/1000 s at 30 fps, D = 0.033) the PSF is much shorter than the raw
+// frame-to-frame displacement; passing D = 1 overestimates it.
 struct MotionParams {
     float dx       = 0.0f;   // px per frame, full resolution
     float dy       = 0.0f;   // px per frame, full resolution

@@ -276,6 +276,11 @@ int main(int argc, char** argv) {
     int max_frames = 0, psf_frames = 5;
     bool display = false, exposure_set = false;
     float exposure = 0.5f, nsr = 0.01f;
+    // Shutter can be given directly in seconds or as an angle.  D is then
+    // derived per frame from the real frame interval (important for VFR and
+    // for cameras whose shutter is far shorter than the frame period).
+    double shutter_sec = 0.0, shutter_angle = 0.0, fps_override = 0.0;
+    bool shutter_set = false, angle_set = false, fps_set = false;
 
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
@@ -287,6 +292,9 @@ int main(int argc, char** argv) {
         else if (a == "--out")      out = next();
         else if (a == "--backend")  backend = next();
         else if (a == "--exposure") { exposure = std::stof(next()); exposure_set = true; }
+        else if (a == "--shutter")  { shutter_sec = std::stod(next()); shutter_set = true; }
+        else if (a == "--shutter-angle") { shutter_angle = std::stod(next()); angle_set = true; }
+        else if (a == "--fps")      { fps_override = std::stod(next()); fps_set = true; }
         else if (a == "--nsr")      nsr = std::stof(next());
         else if (a == "--fixed")    fixed = next();
         else if (a == "--max-frames") max_frames = std::stoi(next());
@@ -295,20 +303,51 @@ int main(int argc, char** argv) {
         else if (a == "--display")  display = true;
         else if (a == "-h" || a == "--help") {
             std::cout << "usage: deblur_video --in VID [--out VID] [--backend ...]\n"
-                         "                     [--exposure D] [--nsr 0.01] [--fixed dx,dy,da]\n"
+                         "                     [--exposure D | --shutter SEC | --shutter-angle DEG]\n"
+                         "                     [--fps F] [--nsr 0.01] [--fixed dx,dy,da]\n"
                          "                     [--max-frames N] [--display]\n"
                          "                     [--dump-psf DIR] [--psf-frames N]\n"
-                         "  --exposure D     shutter time / frame interval; blur length = D*|motion|\n"
+                         "  --exposure D     shutter time / frame interval (D);\n"
+                         "                   blur length = D * |frame-to-frame motion|\n"
+                         "  --shutter SEC    shutter time in seconds; D = SEC / actual frame interval\n"
+                         "  --shutter-angle DEG  shutter angle in degrees; D = DEG / 360\n"
+                         "  --fps F          override the frame rate (for --shutter and output)\n"
+                         "  --fixed dx,dy,da motion per frame in px and rad (D still applies)\n"
                          "  --dump-psf DIR   write per-block PSF montages (psf_NNNN.png/.csv);\n"
                          "                   also honoured via DEBLUR_PSF_DIR\n"
-                         "  --psf-frames N   number of frames to dump (default 5, 0 = all)\n";
+                         "  --psf-frames N   number of frames to dump (default 5, 0 = all)\n"
+                         "  If none of --exposure/--shutter/--shutter-angle is given, D=0.5\n"
+                         "  is used with a warning: a shorter real shutter gives a shorter PSF.\n";
             return 0;
         } else { std::cerr << "unknown option: " << a << "\n"; return 1; }
     }
     if (in.empty()) { std::cerr << "usage: deblur_video --in VID [options]\n"; return 1; }
-    if (!exposure_set)
-        std::cout << "note: --exposure not given, using 0.5; pass the real shutter/frame "
-                     "ratio, otherwise the blur length is overestimated\n";
+    const int shutter_modes = (exposure_set ? 1 : 0) + (shutter_set ? 1 : 0) +
+                              (angle_set ? 1 : 0);
+    if (shutter_modes > 1) {
+        std::cerr << "use only one of --exposure, --shutter, --shutter-angle\n";
+        return 1;
+    }
+    if (exposure_set && (exposure <= 0.0f || exposure > 1.0f)) {
+        std::cerr << "--exposure must be in (0, 1]\n";
+        return 1;
+    }
+    if (shutter_set && shutter_sec <= 0.0) {
+        std::cerr << "--shutter must be > 0 seconds\n";
+        return 1;
+    }
+    if (angle_set && (shutter_angle <= 0.0 || shutter_angle > 360.0)) {
+        std::cerr << "--shutter-angle must be in (0, 360] degrees\n";
+        return 1;
+    }
+    if (fps_set && fps_override <= 0.0) {
+        std::cerr << "--fps must be > 0\n";
+        return 1;
+    }
+    if (!exposure_set && !shutter_set && !angle_set)
+        std::cout << "note: no --exposure/--shutter/--shutter-angle given, using D=0.5; "
+                     "if the real shutter is shorter than half the frame interval, "
+                     "the PSF length is overestimated\n";
 
     if (psf_dir.empty()) {
         if (const char* e = std::getenv("DEBLUR_PSF_DIR")) psf_dir = e;
@@ -324,7 +363,21 @@ int main(int argc, char** argv) {
 
     cv::VideoCapture cap(in);
     if (!cap.isOpened()) { std::cerr << "cannot open " << in << "\n"; return 1; }
-    const double fps = cap.get(cv::CAP_PROP_FPS) > 1.0 ? cap.get(cv::CAP_PROP_FPS) : 30.0;
+    double fps = cap.get(cv::CAP_PROP_FPS);
+    if (!(fps > 1.0)) fps = 30.0;
+    const bool fps_fixed = fps_set;
+    if (fps_fixed) fps = fps_override;
+    if (fps <= 1.0) { std::cerr << "invalid --fps\n"; return 1; }
+
+    if (shutter_set)
+        std::cout << "shutter=" << shutter_sec << " s  fps=" << fps
+                  << "  D≈" << std::clamp(shutter_sec * fps, 0.0, 1.0)
+                  << " at nominal fps (blur length = D * frame-to-frame motion)\n";
+    else if (angle_set)
+        std::cout << "shutter angle=" << shutter_angle << " deg  D="
+                  << shutter_angle / 360.0 << " (blur length = D * frame-to-frame motion)\n";
+    else if (exposure_set)
+        std::cout << "D=" << exposure << " (blur length = D * frame-to-frame motion)\n";
 
     cv::VideoWriter wr;
     if (!out.empty()) {
@@ -345,16 +398,37 @@ int main(int argc, char** argv) {
     cv::Mat prev_gray;
     std::vector<cv::Point2f> p0;
     int frame_no = 0, used = 0, psf_dumped = 0;
+    double prev_pos_ms = -1.0;
 
     cv::Mat frame;
     while (cap.read(frame)) {
         if (max_frames > 0 && frame_no >= max_frames) break;
 
+        // Real frame interval.  CAP_PROP_POS_MSEC is the timestamp of the
+        // frame just read; using it keeps D correct for VFR video.  If the
+        // backend reports no useful timestamps, fall back to the nominal fps.
+        const double pos_ms = cap.get(cv::CAP_PROP_POS_MSEC);
+        double frame_dt = 1.0 / fps;
+        if (!fps_fixed && prev_pos_ms >= 0.0 && pos_ms > prev_pos_ms) {
+            const double dt = (pos_ms - prev_pos_ms) * 1e-3;
+            if (dt > 1e-4 && dt < 2.0) frame_dt = dt;
+        }
+        prev_pos_ms = pos_ms;
+
+        // Physical blur = velocity * shutter, while the optical flow gives
+        // velocity * frame interval.  D = shutter / frame interval is the
+        // missing factor; without it the PSF is overestimated.
+        float D = exposure;
+        if (shutter_set)
+            D = static_cast<float>(std::clamp(shutter_sec / frame_dt, 0.0, 1.0));
+        else if (angle_set)
+            D = static_cast<float>(std::clamp(shutter_angle / 360.0, 0.0, 1.0));
+
         cv::Mat gray;
         cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
 
         deblur::MotionParams p;
-        p.exposure = exposure;
+        p.exposure = D;
         p.nsr = nsr;
 
         if (use_fixed) {
@@ -395,6 +469,15 @@ int main(int argc, char** argv) {
         if (!psf_dir.empty() && (psf_frames == 0 || psf_dumped < psf_frames)) {
             dump_psf_frame(psf_dir, frame_no, p, frame.cols, frame.rows);
             ++psf_dumped;
+        }
+
+        if (frame_no > 0 && frame_no % 30 == 0) {
+            const double motion = std::hypot(static_cast<double>(p.dx),
+                                             static_cast<double>(p.dy));
+            std::printf("[motion] frame %d  dt=%.2f ms  D=%.4f  "
+                        "|motion|=%.2f px  T_centre=%.2f px\n",
+                        frame_no, frame_dt * 1e3, p.exposure, motion,
+                        p.exposure * motion);
         }
 
         cv::Mat dst;

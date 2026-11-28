@@ -32,6 +32,31 @@ CUDA, FPGA**. Стенд меряет медианное время, fps и PSNR
 Подробное объяснение «для неспециалиста», устройство стенда, результаты
 замеров и как добавить свой бэкенд — в [`docs/benchmark.md`](docs/benchmark.md).
 
+## Деблюр видео
+
+`deblur_video` оценивает движение по соседним кадрам (GFTT + LK +
+`estimateAffine2D`) и применяет выбранный бэкенд. Смещение между кадрами —
+это `velocity * frame_interval`, а смаз на кадре — `velocity * shutter_time`.
+Поэтому длину PSF нельзя брать прямо из межкадрового смещения: нужен
+коэффициент `D = shutter_time / frame_interval`:
+
+```bash
+# выдержка 1 мс, 30 fps -> D ≈ 0.03; PSF в 33 раза короче смещения кадров
+./host/build/deblur_video --in video.mp4 --out out.mp4 \
+    --backend fpga --shutter 0.001 --nsr 0.01
+
+# то же через угол выдержки (180° = половина периода кадра)
+./host/build/deblur_video --in video.mp4 --shutter-angle 180
+
+# если D уже известно
+./host/build/deblur_video --in video.mp4 --exposure 0.03
+```
+
+Для `--shutter` D пересчитывается по фактическим меткам времени кадров
+(`CAP_PROP_POS_MSEC`), поэтому переменный frame rate не ломает оценку.
+`--dump-psf DIR` сохраняет PSF по блокам и печатает `L` в пикселях — по нему
+видно, совпадает ли оценка с реальным смазом.
+
 ## Что дальше
 
 1. Включить в XDMA AXI-Lite master (user BAR) — путь для регистров.
